@@ -1,1 +1,9 @@
-{"name":"Usly — private space for two","short_name":"Usly","start_url":"/","display":"standalone","background_color":"#0d0a12","theme_color":"#ec4899"}
+{
+  "name": "Usly — private space for two",
+  "short_name": "Usly",
+  "start_url": "/Usly/",
+  "scope": "/Usly/",
+  "display": "standalone",
+  "background_color": "#0d0a12",
+  "theme_color": "#ec4899"
+}
