@@ -7,12 +7,27 @@ export type CoupleSummary = {
   createdAt: string
 }
 
-type RpcResult = {
+type CreateCoupleRpcResult = {
   couple_id: string
   invite_code: string
 }
 
-function normalize(data: RpcResult | RpcResult[] | null): RpcResult | null {
+type JoinCoupleRpcResult = {
+  id: string
+  invite_code: string
+  created_at: string
+}
+
+function normalizeCreateResult(
+  data: CreateCoupleRpcResult | CreateCoupleRpcResult[] | null,
+): CreateCoupleRpcResult | null {
+  if (!data) return null
+  return Array.isArray(data) ? data[0] ?? null : data
+}
+
+function normalizeJoinResult(
+  data: JoinCoupleRpcResult | JoinCoupleRpcResult[] | null,
+): JoinCoupleRpcResult | null {
   if (!data) return null
   return Array.isArray(data) ? data[0] ?? null : data
 }
@@ -109,7 +124,9 @@ export async function createCouple(): Promise<{
     }
   }
 
-  const result = normalize(data as RpcResult | RpcResult[] | null)
+  const result = normalizeCreateResult(
+    data as CreateCoupleRpcResult | CreateCoupleRpcResult[] | null,
+  )
 
   if (!result) {
     return {
@@ -131,9 +148,9 @@ export async function createCouple(): Promise<{
     }
   }
 
-  // The database RPC already succeeded, so the couple exists.
-  // Do not show a false CREATE_FAILED if the immediate follow-up read
-  // is temporarily unavailable.
+  // create_couple уже успешно выполнилась в базе.
+  // Не показываем ложную ошибку, если мгновенное чтение
+  // созданной пары временно не прошло.
   return {
     ok: true,
     couple: {
@@ -158,18 +175,55 @@ export async function joinCouple(inviteCode: string): Promise<{
     }
   }
 
+  const normalizedCode = inviteCode.trim().toUpperCase()
+
+  if (!normalizedCode) {
+    return {
+      ok: false,
+      couple: null,
+      error: 'INVALID_INVITE_CODE',
+    }
+  }
+
   const { data, error } = await supabase.rpc('join_couple', {
-    input_invite_code: inviteCode.trim().toUpperCase(),
+    p_invite_code: normalizedCode,
   })
 
   if (error) {
-    const message = error.message.toLowerCase()
+    const message = error.message.toUpperCase()
 
-    if (message.includes('full')) {
+    if (
+      message.includes('COUPLE_IS_FULL') ||
+      message.includes('COUPLE_FULL')
+    ) {
       return {
         ok: false,
         couple: null,
         error: 'COUPLE_FULL',
+      }
+    }
+
+    if (message.includes('INVALID_INVITE_CODE')) {
+      return {
+        ok: false,
+        couple: null,
+        error: 'INVALID_INVITE_CODE',
+      }
+    }
+
+    if (message.includes('CURRENT_COUPLE_NOT_SOLO')) {
+      return {
+        ok: false,
+        couple: null,
+        error: 'CURRENT_COUPLE_NOT_SOLO',
+      }
+    }
+
+    if (message.includes('NOT_AUTHENTICATED')) {
+      return {
+        ok: false,
+        couple: null,
+        error: 'NOT_AUTHENTICATED',
       }
     }
 
@@ -180,7 +234,9 @@ export async function joinCouple(inviteCode: string): Promise<{
     }
   }
 
-  const result = normalize(data as RpcResult | RpcResult[] | null)
+  const result = normalizeJoinResult(
+    data as JoinCoupleRpcResult | JoinCoupleRpcResult[] | null,
+  )
 
   if (!result) {
     return {
@@ -191,7 +247,7 @@ export async function joinCouple(inviteCode: string): Promise<{
   }
 
   const couple = await getSummary(
-    result.couple_id,
+    result.id,
     result.invite_code,
   )
 
@@ -202,14 +258,16 @@ export async function joinCouple(inviteCode: string): Promise<{
     }
   }
 
-  // Joining already succeeded in the database.
+  // join_couple уже успешно завершилась в базе.
+  // Это также покрывает сценарий, когда пользователь
+  // был перенесён из своей одиночной пары в пару партнёра.
   return {
     ok: true,
     couple: {
-      id: result.couple_id,
+      id: result.id,
       inviteCode: result.invite_code,
       memberCount: 2,
-      createdAt: new Date().toISOString(),
+      createdAt: result.created_at ?? new Date().toISOString(),
     },
   }
 }
