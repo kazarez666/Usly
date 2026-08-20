@@ -1,0 +1,146 @@
+/* Mobile/PWA polish: make Usly behave more like an installed app. */
+
+html {
+  width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+  scrollbar-width: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  touch-action: pan-y;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#root::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+body {
+  width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  width: 100%;
+  min-height: 100dvh;
+  overflow-x: clip;
+}
+
+button,
+a,
+[role='button'] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+img,
+svg {
+  -webkit-user-drag: none;
+}
+
+/* Keep text fields behaving normally even though the surrounding UI is app-like. */
+input,
+textarea,
+select {
+  touch-action: manipulation;
+}
+
+/* Five actual tabs, not six empty grid tracks. */
+.bottom-nav {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+@media (max-width: 760px) {
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  body {
+    min-height: 100dvh;
+  }
+
+  .shell.app-shell {
+    width: 100%;
+    max-width: none;
+    min-height: 100dvh;
+    margin: 0;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-bottom: calc(78px + env(safe-area-inset-bottom));
+  }
+
+  /* Bottom navigation is attached to the physical bottom edge like a native tab bar. */
+  .bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: none;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 7px 8px calc(7px + env(safe-area-inset-bottom));
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+    border-radius: 18px 18px 0 0;
+    background: rgba(18, 14, 24, .96);
+    box-shadow: 0 -10px 34px rgba(0, 0, 0, .28);
+    backdrop-filter: blur(22px) saturate(1.15);
+    -webkit-backdrop-filter: blur(22px) saturate(1.15);
+  }
+
+  .bottom-nav button {
+    min-width: 0;
+    min-height: 54px;
+    padding: 7px 2px 5px;
+    border-radius: 13px;
+  }
+
+  .bottom-nav button span {
+    font-size: 21px;
+  }
+
+  .bottom-nav button small {
+    font-size: 9px;
+    white-space: nowrap;
+  }
+
+  /* Toasts sit above the attached tab bar. */
+  .toast-notice {
+    bottom: calc(78px + env(safe-area-inset-bottom));
+  }
+
+  /* Reduce browser-ish text selection on chrome/navigation while keeping content selectable. */
+  .app-nav,
+  .bottom-nav,
+  .brand,
+  .eyebrow,
+  .tiny-label {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+@media (display-mode: standalone) {
+  html,
+  body,
+  #root {
+    min-height: 100dvh;
+  }
+
+  .app-nav {
+    padding-top: max(18px, env(safe-area-inset-top));
+  }
+}
