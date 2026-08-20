@@ -1,5 +1,5 @@
 import { Component, FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowRight, Check, Copy, Heart, Languages, LogOut, ShieldCheck, Sparkles, Users, Smile, Cloud, Flame, Moon, Frown, Send, Image as ImageIcon, Trash2, Plus, HandHeart, CircleCheck, UserRound, Camera, Save, X, Settings, CalendarDays, Cake, Video, Square } from 'lucide-react'
+import { ArrowRight, Check, Copy, Heart, Languages, LogOut, ShieldCheck, Sparkles, Users, Smile, Cloud, Flame, Moon, Frown, Send, Image as ImageIcon, Trash2, Plus, HandHeart, CircleCheck, UserRound, Camera, Save, X, Settings, CalendarDays, Cake, Video, Square, Bell } from 'lucide-react'
 import { supabase } from './lib/supabase'
 import {
   createCouple,
@@ -21,6 +21,7 @@ import { getIntimacyEvents, toggleIntimacyEvent, intimacyTypes, type IntimacyEve
 import { createGiftWish, deleteGiftWish, getGiftWishes, toggleGiftWish, type GiftWish } from './lib/giftWishes'
 import { createTruthReply, createTruthTopic, getTruthReplies, getTruthTopics, updateTruthStatus, type TruthCategory, type TruthReply, type TruthStatus, type TruthTopic } from './lib/truthRoom'
 import { roomPasswordExists, setRoomPassword, verifyRoomPassword, type RoomPasswordKind } from './lib/roomPasswords'
+import { getNotifications, markAllNotificationsRead, markNotificationRead, type AppNotification } from './lib/notifications'
 
 type Mode = 'landing' | 'auth' | 'setup' | 'home'
 type AuthMode = 'sign-in' | 'sign-up'
@@ -2286,7 +2287,110 @@ function Home({ t, language, onLanguageChange, theme, onThemeChange, couple, bus
   const [space, setSpace] = useState<UsSpace | null>(null)
   const [partnerOnline, setPartnerOnline] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [notifications, setNotifications] = useState<AppNotification[]>([])
   const [blockVisibility, setBlockVisibility] = useState<BlockVisibility>(() => getBlockVisibility(couple.id))
+
+
+  const unreadNotifications = notifications.filter(item => !item.readAt).length
+
+  const loadNotifications = async () => {
+    const rows = await getNotifications(couple.id)
+    setNotifications(rows)
+  }
+
+  const openNotifications = async () => {
+    setSettingsOpen(false)
+    setNotificationsOpen(true)
+
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      try {
+        await Notification.requestPermission()
+      } catch {
+        // Notification permission is optional; the in-app center still works.
+      }
+    }
+
+    const rows = await getNotifications(couple.id)
+    setNotifications(rows)
+
+    if (rows.some(item => !item.readAt)) {
+      await markAllNotificationsRead(couple.id)
+      const readAt = new Date().toISOString()
+      setNotifications(current => current.map(item => item.readAt ? item : { ...item, readAt }))
+    }
+  }
+
+  const openNotificationItem = async (item: AppNotification) => {
+    if (!item.readAt) {
+      await markNotificationRead(item.id)
+      const readAt = new Date().toISOString()
+      setNotifications(current => current.map(row => row.id === item.id ? { ...row, readAt } : row))
+    }
+
+    setNotificationsOpen(false)
+
+    if (item.entityType === 'message' || item.type === 'message') {
+      setActiveSection('chat')
+      return
+    }
+    if (item.entityType === 'feeling' || item.entityType === 'desire' || item.type === 'feeling' || item.type === 'desire') {
+      setActiveSection('feelings')
+      return
+    }
+    if (item.entityType === 'moment' || item.type === 'moment') {
+      setActiveSection('moments')
+      return
+    }
+    if (item.entityType === 'wish' || item.type === 'wish_joined' || item.type === 'wish_done') {
+      setActiveSection('us')
+    }
+  }
+
+  useEffect(() => {
+    let active = true
+    void getNotifications(couple.id).then(rows => {
+      if (active) setNotifications(rows)
+    })
+
+    if (!supabase) return () => { active = false }
+
+    const channel = supabase
+      .channel(`notifications-${couple.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `couple_id=eq.${couple.id}`,
+      }, async payload => {
+        if (!active) return
+
+        const row = payload.new as any
+        const rows = await getNotifications(couple.id)
+        if (!active) return
+        setNotifications(rows)
+
+        if (
+          typeof Notification !== 'undefined' &&
+          Notification.permission === 'granted' &&
+          document.visibilityState !== 'visible'
+        ) {
+          const title = row?.title ? `Usly · ${row.title}` : 'Usly'
+          const body = row?.body ? String(row.body).slice(0, 160) : undefined
+          try {
+            new Notification(title, body ? { body } : undefined)
+          } catch {
+            // The in-app notification center remains available.
+          }
+        }
+      })
+      .subscribe()
+
+    return () => {
+      active = false
+      void supabase?.removeChannel(channel)
+    }
+  }, [couple.id])
 
   useEffect(() => {
     setBlockVisibility(getBlockVisibility(couple.id))
@@ -2497,10 +2601,91 @@ function Home({ t, language, onLanguageChange, theme, onThemeChange, couple, bus
             <span className="network-label">{partnerOnline ? (language === 'ru' ? 'онлайн' : 'online') : (language === 'ru' ? 'офлайн' : 'offline')}</span>
           </span>}
           <LanguageSwitcher language={language} onChange={onLanguageChange} label={t.navLanguage} />
-          <button className="icon-button" title={language === 'ru' ? 'Настройки' : 'Settings'} onClick={() => setSettingsOpen(v => !v)} aria-label={language === 'ru' ? 'Настройки' : 'Settings'}><Settings size={17} /></button>
+          {!waiting && <button
+            className="icon-button"
+            title={language === 'ru' ? 'Уведомления' : 'Notifications'}
+            onClick={() => void openNotifications()}
+            aria-label={language === 'ru' ? 'Уведомления' : 'Notifications'}
+            style={{ position: 'relative' }}
+          >
+            <Bell size={17} />
+            {unreadNotifications > 0 && <b className="nav-badge" style={{ position: 'absolute', top: -5, right: -5 }}>{unreadNotifications > 9 ? '9+' : unreadNotifications}</b>}
+          </button>}
+          <button className="icon-button" title={language === 'ru' ? 'Настройки' : 'Settings'} onClick={() => { setNotificationsOpen(false); setSettingsOpen(v => !v) }} aria-label={language === 'ru' ? 'Настройки' : 'Settings'}><Settings size={17} /></button>
           <button className="text-button" onClick={signOut}><LogOut size={16} /> {t.signOut}</button>
         </div>
       </nav>
+
+      {notificationsOpen && (
+        <div
+          className="settings-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label={language === 'ru' ? 'Уведомления' : 'Notifications'}
+          onMouseDown={event => { if (event.target === event.currentTarget) setNotificationsOpen(false) }}
+        >
+          <section className="settings-sheet">
+            <div className="settings-sheet-head">
+              <div>
+                <span className="tiny-label">USLY</span>
+                <h2>{language === 'ru' ? 'Уведомления' : 'Notifications'}</h2>
+              </div>
+              <button className="notification-close" onClick={() => setNotificationsOpen(false)} aria-label={language === 'ru' ? 'Закрыть' : 'Close'}><X size={17}/></button>
+            </div>
+
+            <div className="settings-section">
+              <span className="tiny-label">
+                {language === 'ru' ? 'СООБЫТИЯ ВАШЕЙ ПАРЫ' : 'YOUR COUPLE ACTIVITY'}
+              </span>
+
+              {!notifications.length ? (
+                <div className="current-feeling-empty">
+                  <span>♡</span>
+                  <div>
+                    <strong>{language === 'ru' ? 'Пока тихо' : 'Nothing new yet'}</strong>
+                    <p>{language === 'ru'
+                      ? 'Здесь появятся новые сообщения, изменения чувств и желания партнёра.'
+                      : 'New messages, feeling changes and partner desires will appear here.'}</p>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gap: 10 }}>
+                  {notifications.map(item => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="settings-row"
+                      onClick={() => void openNotificationItem(item)}
+                      style={{
+                        textAlign: 'left',
+                        opacity: item.readAt ? 0.72 : 1,
+                        border: item.readAt ? undefined : '1px solid currentColor',
+                      }}
+                    >
+                      <span className="settings-row-icon">
+                        {item.type === 'message' ? '💬' : item.type === 'feeling' ? '♡' : item.type === 'desire' ? '✨' : item.type === 'moment' ? '▧' : '♥'}
+                      </span>
+                      <span>
+                        <strong>{item.title}</strong>
+                        {item.body && <small>{item.body}</small>}
+                        <small>{formatRelativeTime(item.createdAt, language)}</small>
+                      </span>
+                      {!item.readAt && <span aria-label={language === 'ru' ? 'Новое' : 'New'}>●</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="settings-footer">
+              <Bell size={16}/>
+              <span>{language === 'ru'
+                ? 'Системные уведомления работают, когда браузер разрешил их и страница Usly открыта в фоне.'
+                : 'System notifications work when the browser allows them and Usly is open in the background.'}</span>
+            </div>
+          </section>
+        </div>
+      )}
 
       {settingsOpen && (
         <div className="settings-overlay" role="dialog" aria-modal="true" aria-label={language === 'ru' ? 'Настройки' : 'Settings'} onMouseDown={event => { if (event.target === event.currentTarget) setSettingsOpen(false) }}>
