@@ -81,11 +81,7 @@ select {
     padding-bottom: 56px !important;
   }
 
-  /*
-    One compact native-style tab bar in every visual theme.
-    Theme CSS contains several !important bottom-nav rules, so this intentionally
-    wins with higher specificity and explicit box sizing/height constraints.
-  */
+  /* One compact tab bar in every theme. Keep the geometry identical. */
   html[data-theme="core"] body nav.bottom-nav,
   html[data-theme="rush"] body nav.bottom-nav,
   html[data-theme="nocturne"] body nav.bottom-nav,
@@ -196,18 +192,25 @@ select {
     padding-top: max(18px, env(safe-area-inset-top));
   }
 
-  /* In installed PWA mode the home-indicator area is ours, not Safari's toolbar. */
+  /* Do not add the iPhone home-indicator inset to the tab bar height.
+     It made the bar ~90px tall on Face ID iPhones and left a dead empty strip.
+     The bar stays compact and its background still reaches the physical bottom. */
   @media (max-width: 760px) {
     .shell.app-shell {
-      padding-bottom: calc(56px + env(safe-area-inset-bottom)) !important;
+      padding-bottom: 56px !important;
     }
 
+    html[data-theme="core"] body nav.bottom-nav,
+    html[data-theme="rush"] body nav.bottom-nav,
+    html[data-theme="nocturne"] body nav.bottom-nav,
+    html[data-theme="mono"] body nav.bottom-nav,
+    html[data-theme="custom"] body nav.bottom-nav,
     html[data-theme] body nav.bottom-nav,
     body nav.bottom-nav {
-      height: calc(56px + env(safe-area-inset-bottom)) !important;
-      min-height: calc(56px + env(safe-area-inset-bottom)) !important;
-      max-height: calc(56px + env(safe-area-inset-bottom)) !important;
-      padding-bottom: env(safe-area-inset-bottom) !important;
+      height: 56px !important;
+      min-height: 56px !important;
+      max-height: 56px !important;
+      padding-bottom: 0 !important;
     }
   }
 }
