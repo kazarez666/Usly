@@ -11,7 +11,29 @@ export type Feeling = {
   updatedAt: string
 }
 
-export async function getCurrentFeelings(coupleId: string): Promise<Feeling[]> {
+type FeelingRow = {
+  id: string
+  couple_id: string
+  user_id: string
+  mood: string
+  note: string | null
+  updated_at: string
+}
+
+const feelingsInFlight = new Map<string, Promise<Feeling[]>>()
+const feelingsCache = new Map<string, { rows: Feeling[]; localFastPathUntil: number }>()
+const LOCAL_MUTATION_FAST_PATH_MS = 900
+
+const mapFeeling = (row: FeelingRow): Feeling => ({
+  id: row.id,
+  coupleId: row.couple_id,
+  userId: row.user_id,
+  mood: row.mood,
+  note: row.note,
+  updatedAt: row.updated_at,
+})
+
+async function fetchCurrentFeelings(coupleId: string): Promise<Feeling[]> {
   if (!supabase) return []
 
   const { data, error } = await supabase
@@ -25,22 +47,28 @@ export async function getCurrentFeelings(coupleId: string): Promise<Feeling[]> {
     return []
   }
 
-  return (data ?? []).map((row: {
-    id: string; couple_id: string; user_id: string; mood: string; note: string | null; updated_at: string
-  }) => ({
-    id: row.id,
-    coupleId: row.couple_id,
-    userId: row.user_id,
-    mood: row.mood,
-    note: row.note,
-    updatedAt: row.updated_at,
-  }))
+  const rows = (data ?? []).map((row) => mapFeeling(row as FeelingRow))
+  feelingsCache.set(coupleId, { rows, localFastPathUntil: 0 })
+  return rows
+}
+
+export function getCurrentFeelings(coupleId: string): Promise<Feeling[]> {
+  const cached = feelingsCache.get(coupleId)
+  if (cached && cached.localFastPathUntil > Date.now()) return Promise.resolve(cached.rows)
+
+  const current = feelingsInFlight.get(coupleId)
+  if (current) return current
+
+  let request: Promise<Feeling[]>
+  request = fetchCurrentFeelings(coupleId).finally(() => {
+    if (feelingsInFlight.get(coupleId) === request) feelingsInFlight.delete(coupleId)
+  })
+  feelingsInFlight.set(coupleId, request)
+  return request
 }
 
 async function getSessionUserId(): Promise<string | null> {
   if (!supabase) return null
-  // getSession() reads the already-restored browser session and avoids an
-  // extra auth network request every time a view needs the current user id.
   const { data, error } = await supabase.auth.getSession()
   if (error || !data.session?.user) return null
   return data.session.user.id
@@ -54,13 +82,13 @@ export async function saveFeeling(
   coupleId: string,
   mood: string,
   note: string,
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; feeling?: Feeling; error?: string }> {
   if (!supabase) return { ok: false, error: 'SUPABASE_MISSING' }
 
   const userId = await getSessionUserId()
   if (!userId) return { ok: false, error: 'NOT_AUTHENTICATED' }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('couple_feelings')
     .upsert({
       couple_id: coupleId,
@@ -69,6 +97,17 @@ export async function saveFeeling(
       note: note.trim() || null,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'couple_id,user_id' })
+    .select('id, couple_id, user_id, mood, note, updated_at')
+    .single()
 
-  return error ? { ok: false, error: error.message } : { ok: true }
+  if (error || !data) return { ok: false, error: error?.message ?? 'SAVE_FAILED' }
+
+  const feeling = mapFeeling(data as FeelingRow)
+  const cached = feelingsCache.get(coupleId)
+  const rows = cached
+    ? [feeling, ...cached.rows.filter(item => item.userId !== userId)]
+    : [feeling]
+  feelingsCache.set(coupleId, { rows, localFastPathUntil: Date.now() + LOCAL_MUTATION_FAST_PATH_MS })
+
+  return { ok: true, feeling }
 }
