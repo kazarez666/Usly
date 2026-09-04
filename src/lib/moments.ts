@@ -11,6 +11,24 @@ export type Moment = {
   createdAt: string
 }
 
+async function mapMomentRow(row: any): Promise<Moment> {
+  let imageUrl: string | null = null
+  if (row.image_path && supabase) {
+    const { data: signed } = await supabase.storage.from('moments').createSignedUrl(row.image_path, 60 * 60)
+    imageUrl = signed?.signedUrl ?? null
+  }
+  return {
+    id: row.id,
+    coupleId: row.couple_id,
+    userId: row.user_id,
+    title: row.title,
+    body: row.body,
+    imagePath: row.image_path,
+    imageUrl,
+    createdAt: row.created_at,
+  }
+}
+
 export async function getMoments(coupleId: string): Promise<Moment[]> {
   if (!supabase) return []
   const { data, error } = await supabase
@@ -24,26 +42,42 @@ export async function getMoments(coupleId: string): Promise<Moment[]> {
     return []
   }
 
-  const rows = data ?? []
-  const withUrls = await Promise.all(rows.map(async (row: any) => {
-    let imageUrl: string | null = null
-    if (row.image_path) {
-      const { data: signed } = await supabase!.storage.from('moments').createSignedUrl(row.image_path, 60 * 60)
-      imageUrl = signed?.signedUrl ?? null
-    }
-    return {
-      id: row.id,
-      coupleId: row.couple_id,
-      userId: row.user_id,
-      title: row.title,
-      body: row.body,
-      imagePath: row.image_path,
-      imageUrl,
-      createdAt: row.created_at,
-    }
-  }))
+  return Promise.all((data ?? []).map(mapMomentRow))
+}
 
-  return withUrls
+export async function getLatestMoment(coupleId: string): Promise<Moment | null> {
+  if (!supabase) return null
+  const { data, error } = await supabase
+    .from('moments')
+    .select('id, couple_id, user_id, title, body, image_path, created_at')
+    .eq('couple_id', coupleId)
+    .not('image_path', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    console.error('Failed to load latest moment:', error)
+    return null
+  }
+
+  return data ? mapMomentRow(data) : null
+}
+
+export async function getMomentCount(coupleId: string): Promise<number> {
+  if (!supabase) return 0
+  const { count, error } = await supabase
+    .from('moments')
+    .select('id', { count: 'exact', head: true })
+    .eq('couple_id', coupleId)
+    .not('image_path', 'is', null)
+
+  if (error) {
+    console.error('Failed to load moment count:', error)
+    return 0
+  }
+
+  return count ?? 0
 }
 
 export async function createMoment(

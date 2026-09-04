@@ -36,6 +36,24 @@ export async function getMessages(coupleId: string): Promise<Message[]> {
   return Promise.all((data ?? []).map(mapRow))
 }
 
+export async function getLatestMessage(coupleId: string): Promise<Message | null> {
+  if (!supabase) return null
+  const { data, error } = await supabase
+    .from('messages')
+    .select('id, couple_id, sender_id, body, created_at, read_at, media_type, media_path, duration_ms')
+    .eq('couple_id', coupleId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    console.error('Failed to load latest message:', error)
+    return null
+  }
+
+  return data ? mapRow(data) : null
+}
+
 
 export async function sendMessage(coupleId: string, body: string): Promise<{ ok: boolean; error?: string }> {
   if (!supabase) return { ok: false, error: 'SUPABASE_MISSING' }

@@ -2210,3 +2210,155 @@ html[data-theme="nocturne"] .secret-privacy-shield { background:rgba(7,8,18,.96)
     padding:9px;
   }
 }
+
+/* =========================================================
+   Usly v62 — compact iPhone layout and theme consistency
+   ========================================================= */
+.us-stats-main > .us-stat,
+.us-stats-main > .us-stat:last-child {
+  grid-column:auto!important;
+  width:auto!important;
+  min-width:0!important;
+}
+.us-stats-main .us-stat-usly strong {
+  font-size:42px!important;
+}
+
+.date-composer,
+.date-composer-row {
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+}
+.date-composer > input,
+.date-composer-row input[type="date"] {
+  display:block!important;
+}
+.date-composer > input,
+.date-composer-row input[type="date"],
+.date-composer-row .primary-button {
+  inline-size:100%!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+}
+
+.achievements-card .section-heading > div:first-child {
+  min-width:0;
+}
+.achievements-card .section-heading h2 {
+  white-space:nowrap;
+}
+
+.shared-wishes-hub[data-us-theme] .wish-joined {
+  min-height:32px;
+  padding:0 9px;
+  border:1px solid color-mix(in srgb,var(--us-success) 38%,var(--us-border));
+  border-radius:999px;
+  color:var(--us-success)!important;
+  background:color-mix(in srgb,var(--us-success) 8%,var(--us-panel-2));
+}
+.shared-wishes-hub[data-us-theme="mono"] .wish-joined {
+  color:var(--us-text)!important;
+  border-color:var(--us-border)!important;
+  background:var(--us-panel)!important;
+}
+.wish-card-actions .primary-button,
+.wish-card-actions .secondary-button,
+.wish-card-actions .wish-delete {
+  height:42px!important;
+  min-height:42px!important;
+  margin:0!important;
+  box-sizing:border-box!important;
+}
+.wish-card-actions .wish-delete {
+  width:42px!important;
+  min-width:42px!important;
+  max-width:42px!important;
+  flex:0 0 42px;
+  padding:0!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+
+html[data-theme] .us-horoscope-card::before {
+  background:radial-gradient(circle,color-mix(in srgb,var(--us-accent) 14%,transparent),transparent 68%);
+}
+html[data-theme] .us-horoscope-sign {
+  color:var(--us-text)!important;
+  border-color:color-mix(in srgb,var(--us-accent) 35%,var(--us-border))!important;
+  background:color-mix(in srgb,var(--us-accent) 8%,var(--us-panel-2))!important;
+}
+html[data-theme] .us-horoscope-icon {
+  color:var(--us-accent)!important;
+  background:color-mix(in srgb,var(--us-accent) 12%,var(--us-panel-2))!important;
+  box-shadow:0 8px 28px color-mix(in srgb,var(--us-accent) 12%,transparent)!important;
+}
+html[data-theme="mono"] .us-horoscope-card {
+  background:var(--us-panel)!important;
+}
+html[data-theme="mono"] .us-horoscope-card::before {
+  display:none;
+}
+html[data-theme="mono"] .us-horoscope-sign,
+html[data-theme="mono"] .us-horoscope-icon {
+  color:var(--us-text)!important;
+  border-color:var(--us-border)!important;
+  background:var(--us-panel-2)!important;
+  box-shadow:none!important;
+}
+
+.room-password-card input[type="password"] {
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+}
+.room-password-age {
+  width:min(100%,520px)!important;
+  display:grid!important;
+  grid-template-columns:20px minmax(0,1fr)!important;
+  align-items:start!important;
+  justify-content:initial!important;
+  gap:10px!important;
+  text-align:left!important;
+}
+.room-password-age input[type="checkbox"] {
+  appearance:auto!important;
+  -webkit-appearance:checkbox!important;
+  width:20px!important;
+  min-width:20px!important;
+  max-width:20px!important;
+  height:20px!important;
+  min-height:20px!important;
+  margin:1px 0 0!important;
+  padding:0!important;
+  box-shadow:none!important;
+}
+.room-password-age span {
+  min-width:0;
+}
+
+@media(max-width:560px) {
+  .us-stats-main .us-stat-together strong,
+  .us-stats-main .us-stat-usly strong {
+    font-size:34px!important;
+  }
+  .achievements-card .section-heading {
+    gap:8px!important;
+  }
+  .achievements-card .section-heading h2 {
+    font-size:clamp(15px,4.35vw,18px)!important;
+    letter-spacing:-.045em!important;
+  }
+  .achievements-card .achievement-heading-actions {
+    flex:none;
+    gap:5px;
+  }
+  .achievements-card .achievement-toggle {
+    height:32px;
+    padding:0 8px;
+    font-size:9px;
+  }
+}

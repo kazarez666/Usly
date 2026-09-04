@@ -8,8 +8,8 @@ import {
   type CoupleSummary,
 } from './lib/couples'
 import { getCurrentFeelings, getMyUserId, saveFeeling, type Feeling, type MoodKey } from './lib/feelings'
-import { createMoment, deleteMoment, getMoments, type Moment } from './lib/moments'
-import { deleteMessage, getMessageCount, getMessages, getUnreadCount, markMessagesRead, sendMessage, sendVideoMessage, type Message } from './lib/chat'
+import { createMoment, deleteMoment, getLatestMoment, getMomentCount, getMoments, type Moment } from './lib/moments'
+import { deleteMessage, getLatestMessage, getMessageCount, getMessages, getUnreadCount, markMessagesRead, sendMessage, sendVideoMessage, type Message } from './lib/chat'
 import { getDailyHoroscope, zodiacLabel, type DailyHoroscope } from './lib/horoscope'
 import { getUsSpace, leaveCouple, updateMyProfile, updateUsSettings, type UsSpace } from './lib/us'
 import { createWish, completeWish, deleteWish, getWishes, joinWish, type Wish } from './lib/wishes'
@@ -88,6 +88,23 @@ const STORAGE_KEY = 'usly-language'
 const LATEST_PHOTO_KEY_PREFIX = 'usly-latest-photo-'
 const ACHIEVEMENTS_OPEN_KEY_PREFIX = 'usly-achievements-open-'
 const INTIMACY_COLLAPSED_KEY_PREFIX = 'usly-intimacy-collapsed-'
+const SECRET_AGE_CONFIRMED_KEY_PREFIX = 'usly-secret-age-confirmed:v1:'
+
+function hasConfirmedSecretAge(coupleId: string) {
+  try {
+    return localStorage.getItem(`${SECRET_AGE_CONFIRMED_KEY_PREFIX}${coupleId}`) === '1'
+  } catch {
+    return false
+  }
+}
+
+function rememberSecretAgeConfirmation(coupleId: string) {
+  try {
+    localStorage.setItem(`${SECRET_AGE_CONFIRMED_KEY_PREFIX}${coupleId}`, '1')
+  } catch {
+    // Access confirmation still works for this visit when storage is unavailable.
+  }
+}
 
 type HomeBlockId = 'feeling' | 'note' | 'photo'
 type UsBlockId = 'stats' | 'dates' | 'achievements' | 'giftWishlist' | 'entertainment' | 'truthRoom' | 'compatibility' | 'horoscope' | 'secret'
@@ -1323,7 +1340,7 @@ function IntimacyCalendar({ couple, language }: { couple: CoupleSummary; languag
   </section>
 }
 
-function Achievements({ couple, language, daysTogether, photos, wishes, messageCount }: { couple: CoupleSummary; language: Language; daysTogether: number|null; photos: Moment[]; wishes: Wish[]; messageCount: number }) {
+function Achievements({ couple, language, daysTogether, photoCount, wishes, messageCount }: { couple: CoupleSummary; language: Language; daysTogether: number|null; photoCount: number; wishes: Wish[]; messageCount: number }) {
   const [open, setOpen] = useState(() => localStorage.getItem(`${ACHIEVEMENTS_OPEN_KEY_PREFIX}${couple.id}`) === '1')
   useEffect(() => { localStorage.setItem(`${ACHIEVEMENTS_OPEN_KEY_PREFIX}${couple.id}`, open ? '1' : '0') }, [couple.id, open])
   const completedWishes = wishes.filter(wish => wish.status === 'done').length
@@ -1344,11 +1361,11 @@ function Achievements({ couple, language, daysTogether, photos, wishes, messageC
     {icon:'250',title:language==='ru'?'250 сообщений':'250 messages',text:language==='ru'?'Четверть тысячи слов друг другу.':'A quarter-thousand messages together.',ok:messageCount>=250},
     {icon:'500',title:language==='ru'?'500 сообщений':'500 messages',text:language==='ru'?'Ваш чат действительно живёт.':'Your chat is truly alive.',ok:messageCount>=500},
     {icon:'1K',title:language==='ru'?'1000 сообщений':'1,000 messages',text:language==='ru'?'Тысяча маленьких касаний через экран.':'A thousand little touches through the screen.',ok:messageCount>=1000},
-    {icon:'▧',title:language==='ru'?'Первый кадр':'First photo',text:language==='ru'?'Первое воспоминание появилось в Usly.':'Your first Usly memory.',ok:photos.length>=1},
-    {icon:'▧',title:language==='ru'?'10 кадров':'10 photos',text:language==='ru'?'Вы сохранили 10 воспоминаний.':'You saved 10 memories.',ok:photos.length>=10},
-    {icon:'25',title:language==='ru'?'25 кадров':'25 photos',text:language==='ru'?'Целая коллекция ваших моментов.':'A whole collection of moments.',ok:photos.length>=25},
-    {icon:'50',title:language==='ru'?'50 кадров':'50 photos',text:language==='ru'?'Пятьдесят общих воспоминаний.':'Fifty shared memories.',ok:photos.length>=50},
-    {icon:'100',title:language==='ru'?'100 кадров':'100 photos',text:language==='ru'?'Целая цифровая полка воспоминаний.':'A full shelf of shared memories.',ok:photos.length>=100},
+    {icon:'▧',title:language==='ru'?'Первый кадр':'First photo',text:language==='ru'?'Первое воспоминание появилось в Usly.':'Your first Usly memory.',ok:photoCount>=1},
+    {icon:'▧',title:language==='ru'?'10 кадров':'10 photos',text:language==='ru'?'Вы сохранили 10 воспоминаний.':'You saved 10 memories.',ok:photoCount>=10},
+    {icon:'25',title:language==='ru'?'25 кадров':'25 photos',text:language==='ru'?'Целая коллекция ваших моментов.':'A whole collection of moments.',ok:photoCount>=25},
+    {icon:'50',title:language==='ru'?'50 кадров':'50 photos',text:language==='ru'?'Пятьдесят общих воспоминаний.':'Fifty shared memories.',ok:photoCount>=50},
+    {icon:'100',title:language==='ru'?'100 кадров':'100 photos',text:language==='ru'?'Целая цифровая полка воспоминаний.':'A full shelf of shared memories.',ok:photoCount>=100},
     {icon:'✦',title:language==='ru'?'Первое желание':'First wish',text:language==='ru'?'У вас появился первый общий план.':'Your first shared plan.',ok:wishes.length>=1},
     {icon:'5',title:language==='ru'?'5 желаний':'5 wishes',text:language==='ru'?'Маленький список будущих моментов.':'A small list of future moments.',ok:wishes.length>=5},
     {icon:'✦',title:language==='ru'?'10 желаний':'10 wishes',text:language==='ru'?'Большие и маленькие планы.':'Big and little plans.',ok:wishes.length>=10},
@@ -1489,7 +1506,8 @@ function RoomPasswordGate({ couple, language, room, title, description, ageGate 
   const [exists,setExists]=useState<boolean|null>(null)
   const [password,setPassword]=useState('')
   const [confirm,setConfirm]=useState('')
-  const [ageOk,setAgeOk]=useState(!ageGate)
+  const [agePreviouslyConfirmed]=useState(()=>ageGate&&hasConfirmedSecretAge(couple.id))
+  const [ageOk,setAgeOk]=useState(()=>!ageGate||agePreviouslyConfirmed)
   const [busy,setBusy]=useState(false)
   const [error,setError]=useState('')
   const [setup,setSetup]=useState(false)
@@ -1502,7 +1520,7 @@ function RoomPasswordGate({ couple, language, room, title, description, ageGate 
   }
   if(exists===null) return <div className="room-password-gate"><div className="room-password-card"><span className="eyebrow">USLY</span><h2>{title}</h2><p>Загружаем доступ…</p></div></div>
   const firstSetup=exists===false||setup
-  return <div className="room-password-gate"><div className="room-password-card"><div className="room-password-icon">{room==='secret'?'18+':'♡'}</div><span className="eyebrow">{room==='secret'?'PRIVATE ROOM':'ROOM OF TRUTH'}</span><h2>{firstSetup?(language==='ru'?'Придумайте пароль':'Create a password'):title}</h2><p>{firstSetup?(language==='ru'?'Пароль общий для вас двоих. Он добавляет отдельный уровень доступа к комнате.':'The password is shared by both of you and adds another access layer.'):description}</p>{ageGate&&<label className="room-password-age"><input type="checkbox" checked={ageOk} onChange={e=>setAgeOk(e.target.checked)}/><span>{language==='ru'?'Мне есть 18 лет и я осознанно открываю эту комнату.':'I am 18+ and understand what I am opening.'}</span></label>}<input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder={firstSetup?'Минимум 4 символа':'Введите пароль'} autoComplete="new-password"/><>{firstSetup&&<input type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} placeholder="Повторите пароль" autoComplete="new-password"/>}</><button className="primary-button wide" disabled={busy||!password.trim()} onClick={()=>void submit()}>{busy?'…':firstSetup?(language==='ru'?'Создать и войти':'Create & enter'):(language==='ru'?'Войти':'Enter')} <ArrowRight size={16}/></button>{error&&<div className="notice">{error}</div>}{exists&&<button className="text-button" onClick={()=>{setSetup(true);setPassword('');setConfirm('');setError('')}}>{language==='ru'?'Изменить пароль':'Change password'}</button>}</div></div>
+  return <div className="room-password-gate"><div className="room-password-card"><div className="room-password-icon">{room==='secret'?'18+':'♡'}</div><span className="eyebrow">{room==='secret'?'PRIVATE ROOM':'ROOM OF TRUTH'}</span><h2>{firstSetup?(language==='ru'?'Придумайте пароль':'Create a password'):title}</h2><p>{firstSetup?(language==='ru'?'Пароль общий для вас двоих. Он добавляет отдельный уровень доступа к комнате.':'The password is shared by both of you and adds another access layer.'):description}</p>{ageGate&&!agePreviouslyConfirmed&&<label className="room-password-age"><input type="checkbox" checked={ageOk} onChange={e=>{const checked=e.target.checked;setAgeOk(checked);if(checked)rememberSecretAgeConfirmation(couple.id)}}/><span>{language==='ru'?'Мне есть 18 лет и я осознанно открываю эту комнату.':'I am 18+ and understand what I am opening.'}</span></label>}<input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder={firstSetup?'Минимум 4 символа':'Введите пароль'} autoComplete="new-password"/><>{firstSetup&&<input type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} placeholder="Повторите пароль" autoComplete="new-password"/>}</><button className="primary-button wide" disabled={busy||!password.trim()} onClick={()=>void submit()}>{busy?'…':firstSetup?(language==='ru'?'Создать и войти':'Create & enter'):(language==='ru'?'Войти':'Enter')} <ArrowRight size={16}/></button>{error&&<div className="notice">{error}</div>}{exists&&<button className="text-button" onClick={()=>{setSetup(true);setPassword('');setConfirm('');setError('')}}>{language==='ru'?'Изменить пароль':'Change password'}</button>}</div></div>
 }
 
 function TruthRoomPage({ couple, language, onBack }: { couple: CoupleSummary; language: Language; onBack: () => void }) {
@@ -1629,7 +1647,7 @@ function IdeaRandomizer({ language }: { language: Language }) {
 
 function UsSection({ couple, language, theme, onBack, onOpenSecret, onOpenTruth, blockVisibility }: { couple: CoupleSummary; language: Language; theme: 'core' | 'rush' | 'nocturne' | 'mono' | 'custom'; onBack: () => void; onOpenSecret: () => void; onOpenTruth: () => void; blockVisibility: Record<UsBlockId, boolean> }) {
   const [space, setSpace] = useState<UsSpace | null>(null)
-  const [photos, setPhotos] = useState<Moment[]>([])
+  const [photoCount, setPhotoCount] = useState(0)
   const [wishes, setWishes] = useState<Wish[]>([])
   const [messageCount, setMessageCount] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -1660,14 +1678,8 @@ function UsSection({ couple, language, theme, onBack, onOpenSecret, onOpenTruth,
     setHoroscopeLoading(false)
   }
 
-  const load = async () => {
-    const [spaceResult, photoRows, wishRows, totalMessages] = await Promise.all([
-      getUsSpace(couple.id),
-      getMoments(couple.id),
-      getWishes(couple.id),
-      getMessageCount(couple.id),
-    ])
-
+  const loadSpace = async () => {
+    const spaceResult = await getUsSpace(couple.id)
     if (!spaceResult.ok) setError(spaceResult.error ?? 'Не удалось загрузить ваше пространство.')
     if (spaceResult.space) {
       setSpace(spaceResult.space)
@@ -1675,27 +1687,33 @@ function UsSection({ couple, language, theme, onBack, onOpenSecret, onOpenTruth,
       setStartedAt(spaceResult.space.relationshipStartedAt ?? '')
       setMyName(spaceResult.space.people.find(person => person.isMe)?.displayName ?? '')
     }
-    setPhotos(photoRows.filter(row => Boolean(row.imageUrl)))
-    setWishes(wishRows.ok ? wishRows.wishes : [])
-    setMessageCount(totalMessages)
     setLoading(false)
   }
+
+  const loadPhotoCount = async () => setPhotoCount(await getMomentCount(couple.id))
+  const loadWishes = async () => {
+    const result = await getWishes(couple.id)
+    if (result.ok) setWishes(result.wishes)
+  }
+  const loadMessageCount = async () => setMessageCount(await getMessageCount(couple.id))
 
   useEffect(() => {
     let active = true
     setLoading(true)
-    void load().then(() => {
+    void loadSpace().then(() => {
       if (!active) return
     })
+    void loadPhotoCount()
+    void loadWishes()
+    void loadMessageCount()
 
     if (!supabase) return () => { active = false }
 
     const channel = supabase
       .channel(`couple-us-${couple.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'moments', filter: `couple_id=eq.${couple.id}` }, () => { void load() })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'couple_wishes', filter: `couple_id=eq.${couple.id}` }, () => { void load() })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `couple_id=eq.${couple.id}` }, () => { void getMessageCount(couple.id).then(setMessageCount) })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'couple_dates', filter: `couple_id=eq.${couple.id}` }, () => { void load() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'moments', filter: `couple_id=eq.${couple.id}` }, () => { void loadPhotoCount() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'couple_wishes', filter: `couple_id=eq.${couple.id}` }, () => { void loadWishes() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `couple_id=eq.${couple.id}` }, () => { void loadMessageCount() })
       .subscribe()
 
     return () => {
@@ -1725,7 +1743,7 @@ function UsSection({ couple, language, theme, onBack, onOpenSecret, onOpenTruth,
       setSaving(false)
       return
     }
-    await load()
+    await loadSpace()
     setAvatarFile(null)
     setAvatarPreview(null)
     setBackgroundFile(null)
@@ -1740,7 +1758,10 @@ function UsSection({ couple, language, theme, onBack, onOpenSecret, onOpenTruth,
     setSaving(true); setError('')
     const result = await updateUsSettings(couple.id, coupleName, value || null)
     if (!result.ok) setError(result.error ?? 'Не удалось сохранить дату.')
-    else { setStartedAt(value); await load() }
+    else {
+      setStartedAt(value)
+      setSpace(current => current ? { ...current, relationshipStartedAt: value || null } : current)
+    }
     setSaving(false)
   }
 
@@ -1809,7 +1830,7 @@ function UsSection({ couple, language, theme, onBack, onOpenSecret, onOpenTruth,
       </div>}
 
       {blockVisibility.dates && <CoupleDatesSection couple={couple} language={language} relationshipStartedAt={startedAt} onRelationshipDateSave={saveRelationshipDate} relationshipDateSaving={saving} />}
-      {blockVisibility.achievements && <Achievements couple={couple} language={language} daysTogether={daysTogether} photos={photos} wishes={wishes} messageCount={messageCount} />}
+      {blockVisibility.achievements && <Achievements couple={couple} language={language} daysTogether={daysTogether} photoCount={photoCount} wishes={wishes} messageCount={messageCount} />}
       {blockVisibility.giftWishlist && <GiftWishlist couple={couple} language={language} theme={theme} />}
       {blockVisibility.entertainment && <IdeaRandomizer language={language} />}
       {blockVisibility.compatibility && partner?.zodiac && mine?.zodiac && (
@@ -1834,7 +1855,7 @@ function UsSection({ couple, language, theme, onBack, onOpenSecret, onOpenTruth,
           <div className="us-horoscope-loading"><span className="horoscope-orbit">✦</span><span>{language === 'ru' ? 'Получаем прогноз…' : 'Getting today’s reading…'}</span></div>
         ) : myHoroscope ? (
           <div className="us-horoscope-body">
-            <div className="us-horoscope-icon">✦</div>
+            <div className="us-horoscope-icon">{zodiacOptions.find(z => z.key === mine.zodiac)?.symbol}</div>
             <div className="us-horoscope-copy"><p>{myHoroscope.text}</p><small className="horoscope-date">{language==='ru' ? `Прогноз на ${new Date(`${myHoroscope.date}T00:00:00`).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'})}` : `Reading for ${myHoroscope.date}`}</small></div>
             <small className="horoscope-disclaimer">{language === 'ru' ? 'Развлекательный контент. Гороскоп не является научным прогнозом.' : 'For entertainment only. Horoscopes are not scientific predictions.'}</small>
           </div>
@@ -2453,34 +2474,41 @@ function Home({ t, language, onLanguageChange, theme, onThemeChange, couple, bus
       if (!active) return
       setPartnerFeeling(rows.find((row) => row.userId !== userId) ?? null)
     }
-    const loadHomeSummary = async () => {
-      const [moments, messages, dates, notes] = await Promise.all([
-        getMoments(couple.id),
-        getMessages(couple.id),
-        getCoupleDates(couple.id),
-        getCoupleNotes(couple.id),
-      ])
+    const loadLatestPhoto = async () => {
+      const latest = await getLatestMoment(couple.id)
       if (!active) return
-      const latest = moments[0] ?? null
       setLatestMoment(latest)
       if (latest?.imageUrl) localStorage.setItem(`${LATEST_PHOTO_KEY_PREFIX}${couple.id}`, latest.imageUrl)
-      setLatestMessage(messages[messages.length - 1] ?? null)
-      setCoupleDates(dates.dates)
+    }
+    const loadLatestChatMessage = async () => {
+      const latest = await getLatestMessage(couple.id)
+      if (active) setLatestMessage(latest)
+    }
+    const loadDates = async () => {
+      const dates = await getCoupleDates(couple.id)
+      if (active && dates.ok) setCoupleDates(dates.dates)
+    }
+    const loadNotes = async () => {
+      const notes = await getCoupleNotes(couple.id)
+      if (!active) return
       if (notes.ok) setCoupleNotes(notes.notes)
     }
     void loadSpace()
     void loadLiveFeeling()
-    void loadHomeSummary()
+    void loadLatestPhoto()
+    void loadLatestChatMessage()
+    void loadDates()
+    void loadNotes()
     void getUnreadCount(couple.id).then(count => { if (active) setUnreadMessages(count) })
     if (!supabase) return () => { active = false }
     const channel = supabase
       .channel(`home-live-${couple.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'couple_feelings', filter: `couple_id=eq.${couple.id}` }, () => { void loadLiveFeeling();  })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'moments', filter: `couple_id=eq.${couple.id}` }, () => { void loadHomeSummary();  })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'couple_dates', filter: `couple_id=eq.${couple.id}` }, () => { void loadHomeSummary();  })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'couple_notes', filter: `couple_id=eq.${couple.id}` }, () => { void loadHomeSummary();  })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'moments', filter: `couple_id=eq.${couple.id}` }, () => { void loadLatestPhoto() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'couple_dates', filter: `couple_id=eq.${couple.id}` }, () => { void loadDates() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'couple_notes', filter: `couple_id=eq.${couple.id}` }, () => { void loadNotes() })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `couple_id=eq.${couple.id}` }, async payload => {
-        void loadHomeSummary()
+        void loadLatestChatMessage()
         const userId = await getMyUserId()
         if (payload.new?.sender_id !== userId) {
           setUnreadMessages(await getUnreadCount(couple.id))
