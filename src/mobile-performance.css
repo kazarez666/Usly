@@ -1,0 +1,51 @@
+/* Mobile rendering budget for installed iPhone/PWA use.
+   Prefer opaque/translucent materials over live blur and avoid expensive
+   continuously composited filters across the large app surface. */
+
+@media (max-width: 760px) {
+  html[data-theme] body .app-shell,
+  html[data-theme] body .app-shell * {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  html[data-theme='rush'] .app-shell,
+  html[data-theme='rush'] .app-shell * {
+    filter: none;
+  }
+
+  html[data-theme='rush'] :is(
+    .app-nav,
+    .bottom-nav,
+    .home-feeling-hero,
+    .current-feeling-card,
+    .partner-desire-card,
+    .feelings-composer,
+    .desire-editor,
+    .home-photo-card,
+    .home-note-card,
+    .chat-panel,
+    .us-settings-card,
+    .us-couple-hero,
+    .dates-card,
+    .achievements-card,
+    .gift-wishlist-card,
+    .randomizer-card,
+    .us-compatibility-card,
+    .us-horoscope-card,
+    .secret-entry-card,
+    .truth-entry-card,
+    .intimacy-calendar-card,
+    .relationship-date-row
+  ) {
+    box-shadow: none !important;
+  }
+
+  html[data-theme='rush'] .rush-v2-fx-layer,
+  html[data-theme='rush'] .rush-v2-nav-transition,
+  html[data-theme='rush'] .rush-v2-fx {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    filter: none !important;
+  }
+}
