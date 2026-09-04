@@ -2,8 +2,6 @@ let layer: HTMLDivElement | null = null
 let activationTimer = 0
 let lastClickAt = 0
 
-type NavDirection = 'forward' | 'backward'
-
 function isRush() {
   return document.documentElement.dataset.theme === 'rush'
 }
@@ -80,26 +78,6 @@ function screenCut(y: number) {
   removeAfter(node, 540)
 }
 
-function navDirection(button: HTMLButtonElement): NavDirection {
-  const nav = button.closest('.bottom-nav')
-  if (!nav) return 'forward'
-  const buttons = Array.from(nav.querySelectorAll<HTMLButtonElement>('button'))
-  const targetIndex = buttons.indexOf(button)
-  const currentIndex = buttons.findIndex(item => item.classList.contains('active'))
-  if (currentIndex < 0 || targetIndex < 0 || targetIndex === currentIndex) return 'forward'
-  return targetIndex > currentIndex ? 'forward' : 'backward'
-}
-
-function fullScreenNavSwipe(direction: NavDirection) {
-  const fx = getLayer()
-  fx.querySelectorAll('.rush-v2-nav-transition').forEach(node => node.remove())
-
-  const node = document.createElement('i')
-  node.className = `rush-v2-nav-transition rush-v2-nav-${direction}`
-  fx.appendChild(node)
-  removeAfter(node, 520)
-}
-
 function activationSweep() {
   if (!isRush()) return
   window.clearTimeout(activationTimer)
@@ -133,10 +111,10 @@ function onClick(event: MouseEvent) {
   const color = colorFor(button)
   pop(button)
 
-  if (button.closest('.bottom-nav')) {
-    fullScreenNavSwipe(navDirection(button))
-    return
-  }
+  // Navigation must stay instant and stable. No full-screen wipe: it covered the
+  // bottom bar and introduced frame drops in iOS PWA mode. Keep only the tiny
+  // tactile button response from pop().
+  if (button.closest('.bottom-nav')) return
 
   if (button.matches('.mood-choice')) {
     burst(x, y, color, true)
