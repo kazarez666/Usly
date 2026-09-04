@@ -2,6 +2,8 @@ let layer: HTMLDivElement | null = null
 let activationTimer = 0
 let lastClickAt = 0
 
+type NavDirection = 'forward' | 'backward'
+
 function isRush() {
   return document.documentElement.dataset.theme === 'rush'
 }
@@ -85,6 +87,33 @@ function screenCut(y: number) {
   removeAfter(node, 760)
 }
 
+function navDirection(button: HTMLButtonElement): NavDirection {
+  const nav = button.closest('.bottom-nav')
+  if (!nav) return 'forward'
+  const buttons = Array.from(nav.querySelectorAll<HTMLButtonElement>('button'))
+  const targetIndex = buttons.indexOf(button)
+  const currentIndex = buttons.findIndex(item => item.classList.contains('active'))
+  if (currentIndex < 0 || targetIndex < 0 || targetIndex === currentIndex) return 'forward'
+  return targetIndex > currentIndex ? 'forward' : 'backward'
+}
+
+function fullScreenNavSwipe(direction: NavDirection) {
+  const fx = getLayer()
+  fx.querySelectorAll('.rush-v2-nav-transition').forEach(node => node.remove())
+
+  const node = document.createElement('i')
+  node.className = `rush-v2-nav-transition rush-v2-nav-${direction}`
+  node.innerHTML = '<span class="rush-v2-nav-ink"></span><span class="rush-v2-nav-lines"></span>'
+  fx.appendChild(node)
+  removeAfter(node, 820)
+
+  const root = document.documentElement
+  root.classList.remove('rush-nav-forwarding', 'rush-nav-backing')
+  void root.offsetWidth
+  root.classList.add(direction === 'forward' ? 'rush-nav-forwarding' : 'rush-nav-backing')
+  window.setTimeout(() => root.classList.remove('rush-nav-forwarding', 'rush-nav-backing'), 660)
+}
+
 function activationSweep() {
   if (!isRush()) return
   window.clearTimeout(activationTimer)
@@ -130,8 +159,9 @@ function onClick(event: MouseEvent) {
   }
 
   if (button.closest('.bottom-nav')) {
+    const direction = navDirection(button)
     strongBurst(x, y, '#00e5ff')
-    screenCut(window.innerHeight * .78)
+    fullScreenNavSwipe(direction)
     return
   }
 
@@ -165,4 +195,5 @@ window.addEventListener('pagehide', () => {
   layer?.remove()
   layer = null
   window.clearTimeout(activationTimer)
+  document.documentElement.classList.remove('rush-nav-forwarding', 'rush-nav-backing')
 }, { once: true })
