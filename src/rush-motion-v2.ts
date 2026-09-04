@@ -17,11 +17,11 @@ function getLayer() {
   return layer
 }
 
-function removeAfter(node: HTMLElement, ms = 1100) {
+function removeAfter(node: HTMLElement, ms = 760) {
   window.setTimeout(() => node.remove(), ms)
 }
 
-function add(className: string, x: number, y: number, color: string, vars: Record<string,string> = {}, lifetime = 1100) {
+function add(className: string, x: number, y: number, color: string, vars: Record<string,string> = {}, lifetime = 760) {
   const node = document.createElement('i')
   node.className = `rush-v2-fx ${className}`
   node.style.setProperty('--x', `${x}px`)
@@ -49,34 +49,27 @@ function pointFor(event: MouseEvent, button: HTMLElement) {
   return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
 }
 
-function strongBurst(x: number, y: number, color: string, extra = false) {
-  add('rush-v2-ring', x, y, color, {}, 760)
-  add('rush-v2-flare', x, y, color, {}, 620)
+function burst(x: number, y: number, color: string, strong = false) {
+  add('rush-v2-ring', x, y, color, {}, 560)
+  add('rush-v2-flare', x, y, color, {}, 460)
 
-  const angles = extra
-    ? [-78,-58,-39,-22,-7,12,29,47,66,84]
-    : [-65,-38,-12,18,44,70]
-
+  const angles = strong ? [-62, -31, 0, 31, 62] : [-42, 0, 42]
   angles.forEach((angle, index) => {
-    add('rush-v2-stroke', x, y, index % 3 === 1 ? '#00e5ff' : color, {
+    add('rush-v2-stroke', x, y, index % 2 ? '#00e5ff' : color, {
       '--rot': `${angle}deg`,
-      '--travel': `${58 + (index % 4) * 15}px`,
-      '--len': `${32 + (index % 3) * 13}px`,
-    }, 820)
+      '--travel': `${46 + index * 5}px`,
+      '--len': `${26 + (index % 2) * 8}px`,
+    }, 600)
   })
 
-  const smoke = extra
-    ? [[-48,-68,64,-18],[24,-82,76,14],[62,-46,58,30],[-70,-34,52,-34]]
-    : [[-34,-52,52,-18],[28,-64,58,16],[50,-38,46,28]]
-
-  smoke.forEach(([dx,dy,size,rot]) => {
+  if (strong) {
     add('rush-v2-smoke', x, y, color, {
-      '--dx': `${dx}px`,
-      '--dy': `${dy}px`,
-      '--size': `${size}px`,
-      '--rot': `${rot}deg`,
-    }, 1080)
-  })
+      '--dx': '24px',
+      '--dy': '-54px',
+      '--size': '48px',
+      '--rot': '14deg',
+    }, 720)
+  }
 }
 
 function screenCut(y: number) {
@@ -84,7 +77,7 @@ function screenCut(y: number) {
   node.className = 'rush-v2-screen-cut'
   node.style.setProperty('--y', `${y}px`)
   getLayer().appendChild(node)
-  removeAfter(node, 760)
+  removeAfter(node, 540)
 }
 
 function navDirection(button: HTMLButtonElement): NavDirection {
@@ -103,41 +96,34 @@ function fullScreenNavSwipe(direction: NavDirection) {
 
   const node = document.createElement('i')
   node.className = `rush-v2-nav-transition rush-v2-nav-${direction}`
-  node.innerHTML = '<span class="rush-v2-nav-ink"></span><span class="rush-v2-nav-lines"></span>'
   fx.appendChild(node)
-  removeAfter(node, 820)
-
-  const root = document.documentElement
-  root.classList.remove('rush-nav-forwarding', 'rush-nav-backing')
-  void root.offsetWidth
-  root.classList.add(direction === 'forward' ? 'rush-nav-forwarding' : 'rush-nav-backing')
-  window.setTimeout(() => root.classList.remove('rush-nav-forwarding', 'rush-nav-backing'), 660)
+  removeAfter(node, 520)
 }
 
 function activationSweep() {
   if (!isRush()) return
   window.clearTimeout(activationTimer)
   activationTimer = window.setTimeout(() => {
-    if (!isRush()) return
+    if (!isRush() || document.visibilityState !== 'visible') return
     const node = document.createElement('i')
     node.className = 'rush-v2-activation'
     getLayer().appendChild(node)
-    removeAfter(node, 900)
-  }, 90)
+    removeAfter(node, 520)
+  }, 60)
 }
 
 function pop(button: HTMLElement) {
   button.classList.remove('rush-v2-pop')
   void button.offsetWidth
   button.classList.add('rush-v2-pop')
-  window.setTimeout(() => button.classList.remove('rush-v2-pop'), 620)
+  window.setTimeout(() => button.classList.remove('rush-v2-pop'), 360)
 }
 
 function onClick(event: MouseEvent) {
-  if (!isRush()) return
+  if (!isRush() || document.visibilityState !== 'visible') return
 
   const now = performance.now()
-  if (now - lastClickAt < 70) return
+  if (now - lastClickAt < 90) return
   lastClickAt = now
 
   const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('button') : null
@@ -147,31 +133,29 @@ function onClick(event: MouseEvent) {
   const color = colorFor(button)
   pop(button)
 
+  if (button.closest('.bottom-nav')) {
+    fullScreenNavSwipe(navDirection(button))
+    return
+  }
+
   if (button.matches('.mood-choice')) {
-    strongBurst(x, y, color, true)
+    burst(x, y, color, true)
     return
   }
 
   if (button.matches('.feelings-send')) {
-    strongBurst(x, y, '#ff3ea5', true)
+    burst(x, y, '#ff3ea5', true)
     screenCut(y)
     return
   }
 
-  if (button.closest('.bottom-nav')) {
-    const direction = navDirection(button)
-    strongBurst(x, y, '#00e5ff')
-    fullScreenNavSwipe(direction)
-    return
-  }
-
   if (button.matches('.primary-button')) {
-    strongBurst(x, y, '#ff3ea5')
+    burst(x, y, '#ff3ea5')
     return
   }
 
   if (button.matches('.secondary-button, .icon-button, .desire-options button, .shared-wishes-tabs button, .wish-status-tabs button, .randomizer-tabs button, .truth-room-categories button, .truth-status-actions button')) {
-    strongBurst(x, y, color)
+    burst(x, y, color)
   }
 }
 
@@ -195,5 +179,4 @@ window.addEventListener('pagehide', () => {
   layer?.remove()
   layer = null
   window.clearTimeout(activationTimer)
-  document.documentElement.classList.remove('rush-nav-forwarding', 'rush-nav-backing')
 }, { once: true })
