@@ -11,12 +11,36 @@ export type Moment = {
   createdAt: string
 }
 
+type MomentCacheEntry = { rows: Moment[]; localFastPathUntil: number }
+type SignedUrlCacheEntry = { url: string | null; expiresAt: number }
+
+const momentCache = new Map<string, MomentCacheEntry>()
+const momentRequests = new Map<string, Promise<Moment[]>>()
+const signedUrlCache = new Map<string, SignedUrlCacheEntry>()
+const SIGNED_URL_CACHE_MS = 50 * 60 * 1000
+const LOCAL_MUTATION_FAST_PATH_MS = 1400
+
+async function getSessionUserId(): Promise<string | null> {
+  if (!supabase) return null
+  const { data, error } = await supabase.auth.getSession()
+  if (error || !data.session?.user) return null
+  return data.session.user.id
+}
+
+async function signedMomentUrl(path: string): Promise<string | null> {
+  if (!supabase) return null
+  const cached = signedUrlCache.get(path)
+  if (cached && cached.expiresAt > Date.now()) return cached.url
+
+  const { data, error } = await supabase.storage.from('moments').createSignedUrl(path, 60 * 60)
+  const url = error ? null : data?.signedUrl ?? null
+  if (!error) signedUrlCache.set(path, { url, expiresAt: Date.now() + SIGNED_URL_CACHE_MS })
+  return url
+}
+
 async function mapMomentRow(row: any): Promise<Moment> {
   let imageUrl: string | null = null
-  if (row.image_path && supabase) {
-    const { data: signed } = await supabase.storage.from('moments').createSignedUrl(row.image_path, 60 * 60)
-    imageUrl = signed?.signedUrl ?? null
-  }
+  if (row.image_path && supabase) imageUrl = await signedMomentUrl(row.image_path)
   return {
     id: row.id,
     coupleId: row.couple_id,
@@ -29,23 +53,43 @@ async function mapMomentRow(row: any): Promise<Moment> {
   }
 }
 
-export async function getMoments(coupleId: string): Promise<Moment[]> {
+async function fetchMoments(coupleId: string): Promise<Moment[]> {
   if (!supabase) return []
   const { data, error } = await supabase
     .from('moments')
     .select('id, couple_id, user_id, title, body, image_path, created_at')
     .eq('couple_id', coupleId)
     .order('created_at', { ascending: false })
+    .limit(120)
 
   if (error) {
     console.error('Failed to load moments:', error)
     return []
   }
 
-  return Promise.all((data ?? []).map(mapMomentRow))
+  const rows = await Promise.all((data ?? []).map(mapMomentRow))
+  momentCache.set(coupleId, { rows, localFastPathUntil: 0 })
+  return rows
+}
+
+export function getMoments(coupleId: string): Promise<Moment[]> {
+  const cached = momentCache.get(coupleId)
+  if (cached && cached.localFastPathUntil > Date.now()) return Promise.resolve(cached.rows)
+
+  const current = momentRequests.get(coupleId)
+  if (current) return current
+
+  let request: Promise<Moment[]>
+  request = fetchMoments(coupleId).finally(() => {
+    if (momentRequests.get(coupleId) === request) momentRequests.delete(coupleId)
+  })
+  momentRequests.set(coupleId, request)
+  return request
 }
 
 export async function getLatestMoment(coupleId: string): Promise<Moment | null> {
+  const cached = momentCache.get(coupleId)
+  if (cached?.rows[0] && cached.localFastPathUntil > Date.now()) return cached.rows[0]
   if (!supabase) return null
   const { data, error } = await supabase
     .from('moments')
@@ -65,6 +109,8 @@ export async function getLatestMoment(coupleId: string): Promise<Moment | null> 
 }
 
 export async function getMomentCount(coupleId: string): Promise<number> {
+  const cached = momentCache.get(coupleId)
+  if (cached && cached.localFastPathUntil > Date.now()) return cached.rows.filter(row => Boolean(row.imagePath)).length
   if (!supabase) return 0
   const { count, error } = await supabase
     .from('moments')
@@ -85,12 +131,11 @@ export async function createMoment(
   title: string,
   body: string,
   file?: File | null,
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; moment?: Moment; error?: string }> {
   if (!supabase) return { ok: false, error: 'SUPABASE_MISSING' }
-  const { data: userData, error: userError } = await supabase.auth.getUser()
-  if (userError || !userData.user) return { ok: false, error: 'NOT_AUTHENTICATED' }
+  const userId = await getSessionUserId()
+  if (!userId) return { ok: false, error: 'NOT_AUTHENTICATED' }
 
-  const userId = userData.user.id
   let imagePath: string | null = null
 
   if (file) {
@@ -107,20 +152,27 @@ export async function createMoment(
     if (uploadError) return { ok: false, error: uploadError.message }
   }
 
-  const { error } = await supabase.from('moments').insert({
+  const { data, error } = await supabase.from('moments').insert({
     couple_id: coupleId,
     user_id: userId,
     title: title.trim() || null,
     body: body.trim() || null,
     image_path: imagePath,
-  })
+  }).select('id, couple_id, user_id, title, body, image_path, created_at').single()
 
-  if (error) {
+  if (error || !data) {
     if (imagePath) await supabase.storage.from('moments').remove([imagePath])
-    return { ok: false, error: error.message }
+    return { ok: false, error: error?.message ?? 'CREATE_FAILED' }
   }
 
-  return { ok: true }
+  const moment = await mapMomentRow(data)
+  const cached = momentCache.get(coupleId)
+  const rows = cached
+    ? [moment, ...cached.rows.filter(item => item.id !== moment.id)].slice(0, 120)
+    : [moment]
+  momentCache.set(coupleId, { rows, localFastPathUntil: Date.now() + LOCAL_MUTATION_FAST_PATH_MS })
+
+  return { ok: true, moment }
 }
 
 export async function deleteMoment(moment: Moment): Promise<{ ok: boolean; error?: string }> {
@@ -128,5 +180,7 @@ export async function deleteMoment(moment: Moment): Promise<{ ok: boolean; error
   const { error } = await supabase.from('moments').delete().eq('id', moment.id)
   if (error) return { ok: false, error: error.message }
   if (moment.imagePath) await supabase.storage.from('moments').remove([moment.imagePath])
+  const cached = momentCache.get(moment.coupleId)
+  if (cached) momentCache.set(moment.coupleId, { rows: cached.rows.filter(item => item.id !== moment.id), localFastPathUntil: Date.now() + LOCAL_MUTATION_FAST_PATH_MS })
   return { ok: true }
 }
