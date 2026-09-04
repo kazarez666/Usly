@@ -1,0 +1,144 @@
+/* iPhone/PWA polish: safe areas, cleaner dates, unified Nocturne background. */
+
+/* The older theme CSS contains mobile !important rules that can override the
+   safe-area padding from app-like.css. Re-assert it with higher specificity. */
+@media (max-width: 760px) {
+  html[data-theme] body .shell.app-shell .app-nav,
+  body .shell.app-shell .app-nav {
+    padding-top: max(18px, calc(env(safe-area-inset-top, 0px) + 12px)) !important;
+    padding-bottom: 10px !important;
+  }
+}
+
+/* Keep the top notification center, but remove its stale numeric counter.
+   Chat keeps its own unread badge in the bottom navigation. */
+.app-nav .nav-actions > .icon-button .nav-badge {
+  display: none !important;
+}
+
+/* Relationship start date should read like the first important date, not like
+   a separate settings form. The save action only appears after the date changes. */
+.relationship-date-row {
+  display: grid !important;
+  grid-template-columns: 40px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin: 12px 0 14px !important;
+  padding: 12px !important;
+  border-radius: 16px !important;
+  background: var(--us-panel-2) !important;
+}
+
+.relationship-date-row::before {
+  content: '♡';
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--us-accent) 12%, transparent);
+  color: var(--us-accent);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.relationship-date-row > div:first-child {
+  gap: 2px !important;
+}
+
+.relationship-date-row > div:first-child .tiny-label {
+  display: none !important;
+}
+
+.relationship-date-row strong {
+  font-size: 14px !important;
+  line-height: 1.3 !important;
+}
+
+.relationship-date-row small {
+  margin-top: 2px !important;
+  font-size: 10px !important;
+  line-height: 1.4 !important;
+}
+
+.relationship-date-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+}
+
+.relationship-date-actions input[type='date'] {
+  width: 170px !important;
+  min-width: 0 !important;
+  max-width: 170px !important;
+  height: 38px !important;
+}
+
+.relationship-date-actions .secondary-button:disabled {
+  display: none !important;
+}
+
+.relationship-date-actions .secondary-button {
+  height: 38px !important;
+  min-height: 38px !important;
+  margin: 0 !important;
+  padding: 0 12px !important;
+}
+
+@media (max-width: 560px) {
+  .relationship-date-row {
+    grid-template-columns: 38px minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .relationship-date-row::before {
+    width: 36px;
+    height: 36px;
+  }
+
+  .relationship-date-actions {
+    grid-column: 2 !important;
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+
+  .relationship-date-actions input[type='date'] {
+    width: min(100%, 190px) !important;
+    max-width: 190px !important;
+  }
+}
+
+/* Nocturne is one continuous full-screen night scene. Remove the competing
+   app-shell background layers that created visible horizontal bands on iPhone. */
+html[data-theme='nocturne'] body {
+  background: #070813 !important;
+}
+
+html[data-theme='nocturne'] body .shell.app-shell {
+  background: transparent !important;
+  background-image: none !important;
+}
+
+html[data-theme='nocturne'] body .shell.app-shell::before {
+  inset: 0 !important;
+  opacity: 1 !important;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(199, 156, 255, .15), transparent 30%),
+    radial-gradient(circle at 82% 18%, rgba(108, 231, 255, .10), transparent 27%),
+    radial-gradient(circle at 52% 78%, rgba(130, 102, 255, .08), transparent 36%),
+    linear-gradient(180deg, #070813 0%, #090b19 48%, #070813 100%) !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+}
+
+html[data-theme='nocturne'] body .shell.app-shell::after {
+  display: none !important;
+}
+
+html[data-theme='nocturne'] body .app-nav {
+  background: linear-gradient(180deg, rgba(7, 8, 19, .94), rgba(7, 8, 19, .62), transparent) !important;
+  border-bottom: 0 !important;
+}
