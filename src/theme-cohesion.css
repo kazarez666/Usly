@@ -1,0 +1,144 @@
+/* Theme cohesion pass — remove boxed background layers from every non-Nocturne theme.
+   Nocturne is intentionally excluded because its sky/header were rebuilt separately. */
+
+/* Shared rule: the app shell must never be the visual background canvas.
+   Keeping the visual world on the viewport prevents rectangular strips caused
+   by shell padding, sticky header bounds, and pseudo-element masks. */
+html[data-theme='core'] body .shell.app-shell,
+html[data-theme='rush'] body .shell.app-shell,
+html[data-theme='mono'] body .shell.app-shell,
+html[data-theme='custom'] body .shell.app-shell {
+  background: transparent !important;
+  background-image: none !important;
+}
+
+html[data-theme='core'] body .shell.app-shell::before,
+html[data-theme='core'] body .shell.app-shell::after,
+html[data-theme='rush'] body .shell.app-shell::before,
+html[data-theme='rush'] body .shell.app-shell::after,
+html[data-theme='mono'] body .shell.app-shell::before,
+html[data-theme='mono'] body .shell.app-shell::after,
+html[data-theme='custom'] body .shell.app-shell::before,
+html[data-theme='custom'] body .shell.app-shell::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* Header controls float directly over each theme canvas. This removes the
+   rectangular sticky-header slab that was especially visible on iPhone. */
+html[data-theme='core'] body .app-nav,
+html[data-theme='rush'] body .app-nav,
+html[data-theme='mono'] body .app-nav,
+html[data-theme='custom'] body .app-nav {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-theme='core'] body .app-nav::before,
+html[data-theme='core'] body .app-nav::after,
+html[data-theme='rush'] body .app-nav::before,
+html[data-theme='rush'] body .app-nav::after,
+html[data-theme='mono'] body .app-nav::before,
+html[data-theme='mono'] body .app-nav::after,
+html[data-theme='custom'] body .app-nav::before,
+html[data-theme='custom'] body .app-nav::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* CORE — one uninterrupted soft aurora, no grid/mask rectangle. */
+html[data-theme='core'] {
+  background: #0d0a12 !important;
+}
+html[data-theme='core'] body {
+  min-height: 100dvh;
+  background:
+    radial-gradient(ellipse 105% 72% at 10% -4%, rgba(236,72,153,.18) 0%, rgba(236,72,153,.055) 34%, transparent 68%),
+    radial-gradient(ellipse 96% 72% at 96% 18%, rgba(168,85,247,.15) 0%, rgba(168,85,247,.04) 38%, transparent 72%),
+    radial-gradient(ellipse 100% 78% at 48% 102%, rgba(118,65,145,.08) 0%, transparent 68%),
+    linear-gradient(180deg, #100c16 0%, #0d0a12 48%, #09070c 100%) !important;
+  background-repeat: no-repeat !important;
+  background-size: cover !important;
+}
+html[data-theme='core'] #root { background: transparent !important; }
+
+/* RUSH — one continuous street-tech field. Keep the diagonal energy, but put
+   it on the viewport rather than in a clipped shell pseudo-element. */
+html[data-theme='rush'] {
+  background: #08090d !important;
+}
+html[data-theme='rush'] body {
+  min-height: 100dvh;
+  background:
+    repeating-linear-gradient(115deg, transparent 0 44px, rgba(255,62,165,.026) 45px, transparent 47px 92px),
+    radial-gradient(ellipse 88% 62% at 8% 8%, rgba(255,62,165,.16) 0%, transparent 64%),
+    radial-gradient(ellipse 84% 66% at 96% 82%, rgba(0,229,255,.105) 0%, transparent 66%),
+    linear-gradient(180deg, #090a0f 0%, #08090d 55%, #07080b 100%) !important;
+  background-repeat: repeat, no-repeat, no-repeat, no-repeat !important;
+}
+html[data-theme='rush'] #root { background: transparent !important; }
+html[data-theme='rush'] body .app-nav { border-bottom: 0 !important; }
+
+/* MONO — the grid covers the entire viewport, so it cannot terminate at shell
+   edges. The header keeps only a subtle line, not a filled rectangle. */
+html[data-theme='mono'] {
+  background: #f1f0eb !important;
+}
+html[data-theme='mono'] body {
+  min-height: 100dvh;
+  background:
+    linear-gradient(rgba(16,17,15,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16,17,15,.05) 1px, transparent 1px),
+    linear-gradient(180deg, #f3f2ed 0%, #efeee9 100%) !important;
+  background-size: 28px 28px, 28px 28px, cover !important;
+  background-repeat: repeat, repeat, no-repeat !important;
+}
+html[data-theme='mono'] #root { background: transparent !important; }
+html[data-theme='mono'] body .app-nav {
+  border-bottom: 1px solid rgba(16,17,15,.10) !important;
+}
+
+/* CUSTOM — the user's photo is the only background canvas. Remove the old
+   header gradient and fixed-background behavior that can form visible bands on
+   iOS while scrolling. */
+html[data-theme='custom'] {
+  background: #07050a !important;
+}
+html[data-theme='custom'] body {
+  min-height: 100dvh;
+  background-color: #07050a !important;
+  background-image: linear-gradient(rgba(7,5,10,.50), rgba(7,5,10,.76)), var(--us-custom-bg) !important;
+  background-position: center !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+  background-attachment: scroll !important;
+}
+html[data-theme='custom'] #root { background: transparent !important; }
+
+/* Keep controls legible now that the header itself is transparent. */
+html[data-theme='core'] .partner-presence,
+html[data-theme='rush'] .partner-presence,
+html[data-theme='custom'] .partner-presence {
+  background: color-mix(in srgb, var(--us-panel) 84%, transparent) !important;
+}
+
+@media (max-width: 760px) {
+  html[data-theme='core'] body,
+  html[data-theme='rush'] body,
+  html[data-theme='mono'] body,
+  html[data-theme='custom'] body {
+    min-height: 100dvh !important;
+  }
+
+  /* Avoid accidental horizontal painting beyond the iPhone viewport while
+     keeping the continuous backgrounds owned by body. */
+  html[data-theme='core'] body .shell.app-shell,
+  html[data-theme='rush'] body .shell.app-shell,
+  html[data-theme='mono'] body .shell.app-shell,
+  html[data-theme='custom'] body .shell.app-shell {
+    overflow-x: clip !important;
+  }
+}
