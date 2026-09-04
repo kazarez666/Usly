@@ -1,6 +1,6 @@
-/* Rush motion v2 — unmistakable opt-in motion for the Rush theme.
-   This layer is loaded after the original Rush effects and is intentionally
-   stronger on iPhone. Rush itself is the user's explicit animation-heavy theme. */
+/* Rush motion v2 — performance-first motion language.
+   Keep the neon/illustrated identity, but avoid expensive full-screen blur,
+   mix-blend-mode, clip-path and duplicate infinite GPU layers. */
 
 html[data-theme='rush'] #root {
   position: relative;
@@ -8,41 +8,33 @@ html[data-theme='rush'] #root {
   overflow-x: clip;
 }
 
-/* Oversized moving speed texture. It extends well beyond the viewport so no
-   rectangular edge can ever become visible while scrolling. */
+/* Static atmosphere: visually rich, but no continuously animated giant layers. */
 html[data-theme='rush'] #root::before {
   content: '';
   position: fixed;
-  inset: -35vh -35vw;
+  inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: .23;
+  opacity: .18;
   background:
     repeating-linear-gradient(116deg,
       transparent 0 72px,
-      rgba(255,62,165,.16) 73px 74px,
+      rgba(255,62,165,.14) 73px 74px,
       transparent 75px 144px,
-      rgba(0,229,255,.11) 145px 146px,
+      rgba(0,229,255,.09) 145px 146px,
       transparent 147px 218px);
-  transform: translate3d(-3%, -2%, 0);
-  animation: rush-v2-speedfield 7.5s linear infinite;
-  will-change: transform;
 }
 
 html[data-theme='rush'] #root::after {
   content: '';
   position: fixed;
-  inset: -45vh -45vw;
+  inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: .72;
+  opacity: .5;
   background:
-    radial-gradient(circle at 22% 28%, rgba(255,62,165,.14), transparent 22%),
-    radial-gradient(circle at 78% 64%, rgba(0,229,255,.11), transparent 24%),
-    radial-gradient(circle at 58% 12%, rgba(183,255,60,.055), transparent 18%);
-  transform: scale(1.02) translate3d(0,0,0);
-  animation: rush-v2-neon-breathe 5.8s ease-in-out infinite alternate;
-  will-change: transform, opacity;
+    radial-gradient(circle at 20% 24%, rgba(255,62,165,.12), transparent 28%),
+    radial-gradient(circle at 82% 66%, rgba(0,229,255,.09), transparent 30%);
 }
 
 html[data-theme='rush'] .app-shell {
@@ -50,34 +42,13 @@ html[data-theme='rush'] .app-shell {
   z-index: 1;
 }
 
-@keyframes rush-v2-speedfield {
-  0% { transform: translate3d(-4%, -3%, 0); }
-  100% { transform: translate3d(4%, 3%, 0); }
-}
-
-@keyframes rush-v2-neon-breathe {
-  0% { opacity: .48; transform: scale(1) translate3d(-1%,0,0); }
-  100% { opacity: .82; transform: scale(1.06) translate3d(1%,-1%,0); }
-}
-
-/* Make the active Rush controls visibly alive even before interaction. */
-html[data-theme='rush'] .mood-choice.selected,
-html[data-theme='rush'] .bottom-nav button.active {
-  animation: rush-v2-active-breathe 1.9s ease-in-out infinite alternate !important;
-}
-
-@keyframes rush-v2-active-breathe {
-  from { filter: brightness(.96) saturate(1); }
-  to { filter: brightness(1.16) saturate(1.22); }
-}
-
-/* Runtime click layer. */
 .rush-v2-fx-layer {
   position: fixed;
   inset: 0;
   z-index: 2147483000;
   pointer-events: none;
   overflow: hidden;
+  contain: layout paint;
 }
 
 .rush-v2-fx {
@@ -91,243 +62,173 @@ html[data-theme='rush'] .bottom-nav button.active {
 }
 
 .rush-v2-ring {
-  width: 28px;
-  height: 28px;
-  margin: -14px;
-  border: 3px solid var(--fx);
-  border-radius: 48% 52% 45% 55%;
-  box-shadow: 0 0 10px var(--fx), 0 0 28px var(--fx);
-  animation: rush-v2-ring .62s cubic-bezier(.12,.75,.18,1) both !important;
+  width: 24px;
+  height: 24px;
+  margin: -12px;
+  border: 2px solid var(--fx);
+  border-radius: 50%;
+  animation: rush-v2-ring .48s cubic-bezier(.12,.75,.18,1) both !important;
 }
 
 @keyframes rush-v2-ring {
-  0% { opacity: 1; transform: scale(.25) rotate(-8deg); }
-  70% { opacity: .88; }
-  100% { opacity: 0; transform: scale(5.6) rotate(15deg); }
+  0% { opacity: 1; transform: scale(.3) rotate(-6deg); }
+  100% { opacity: 0; transform: scale(4.4) rotate(10deg); }
 }
 
 .rush-v2-flare {
-  width: 150px;
-  height: 150px;
-  margin: -75px;
+  width: 112px;
+  height: 112px;
+  margin: -56px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,255,255,.82) 0 2%, var(--fx) 5%, rgba(255,255,255,.12) 18%, transparent 64%);
-  mix-blend-mode: screen;
-  animation: rush-v2-flare .48s ease-out both !important;
+  background: radial-gradient(circle, rgba(255,255,255,.7) 0 3%, var(--fx) 7%, transparent 62%);
+  animation: rush-v2-flare .4s ease-out both !important;
 }
 
 @keyframes rush-v2-flare {
-  0% { opacity: .92; transform: scale(.16); }
-  100% { opacity: 0; transform: scale(1.35); }
+  0% { opacity: .82; transform: scale(.18); }
+  100% { opacity: 0; transform: scale(1.2); }
 }
 
 .rush-v2-stroke {
-  width: var(--len, 44px);
-  height: 4px;
-  margin-left: calc(var(--len, 44px) * -.5);
-  margin-top: -2px;
-  border-radius: 80% 10% 70% 20%;
-  background: linear-gradient(90deg, transparent, var(--fx) 18% 76%, #fff 82%, transparent);
-  box-shadow: 0 0 9px var(--fx);
+  width: var(--len, 32px);
+  height: 3px;
+  margin-left: calc(var(--len, 32px) * -.5);
+  margin-top: -1px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--fx) 20% 78%, #fff 84%, transparent);
   transform-origin: center;
-  animation: rush-v2-stroke .64s cubic-bezier(.14,.74,.14,1) both !important;
+  animation: rush-v2-stroke .5s cubic-bezier(.14,.74,.14,1) both !important;
 }
 
 @keyframes rush-v2-stroke {
-  0% { opacity: 0; transform: rotate(var(--rot,0deg)) translateX(0) scaleX(.22); }
-  18% { opacity: 1; }
-  100% { opacity: 0; transform: rotate(var(--rot,0deg)) translateX(var(--travel,82px)) scaleX(1.3); }
+  0% { opacity: 0; transform: rotate(var(--rot,0deg)) translateX(0) scaleX(.3); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--rot,0deg)) translateX(var(--travel,52px)) scaleX(1.15); }
 }
 
 .rush-v2-smoke {
-  width: var(--size, 54px);
-  height: calc(var(--size,54px) * .64);
-  margin-left: calc(var(--size,54px) * -.5);
-  margin-top: calc(var(--size,54px) * -.32);
+  width: var(--size, 48px);
+  height: calc(var(--size,48px) * .62);
+  margin-left: calc(var(--size,48px) * -.5);
+  margin-top: calc(var(--size,48px) * -.3);
   border-radius: 55% 45% 63% 37%;
-  background: radial-gradient(ellipse, rgba(190,210,235,.28), rgba(95,110,145,.14) 42%, transparent 72%);
-  filter: blur(3px);
-  animation: rush-v2-smoke .95s ease-out both !important;
+  background: radial-gradient(ellipse, rgba(180,198,226,.22), rgba(80,92,120,.1) 44%, transparent 72%);
+  animation: rush-v2-smoke .62s ease-out both !important;
 }
 
 @keyframes rush-v2-smoke {
-  0% { opacity: .64; transform: translate(0,0) scale(.4) rotate(var(--rot,0deg)); }
-  100% { opacity: 0; transform: translate(var(--dx,40px),var(--dy,-72px)) scale(1.9) rotate(calc(var(--rot,0deg) + 24deg)); }
+  0% { opacity: .48; transform: translate(0,0) scale(.5) rotate(var(--rot,0deg)); }
+  100% { opacity: 0; transform: translate(var(--dx,24px),var(--dy,-54px)) scale(1.45) rotate(calc(var(--rot,0deg) + 14deg)); }
 }
 
 .rush-v2-screen-cut {
   position: fixed;
-  left: -35vw;
+  left: -20vw;
   top: var(--y,50vh);
-  width: 170vw;
-  height: 92px;
-  transform: translateY(-50%) rotate(-7deg) translateX(-34%);
+  width: 140vw;
+  height: 54px;
   opacity: 0;
   background: linear-gradient(90deg,
-    transparent 0 28%,
-    rgba(255,62,165,.08) 34%,
-    rgba(255,62,165,.82) 42%,
-    #fff 45%,
-    rgba(0,229,255,.74) 48%,
-    transparent 57% 100%);
-  mix-blend-mode: screen;
-  animation: rush-v2-cut .52s ease-out both !important;
+    transparent 0 30%,
+    rgba(255,62,165,.72) 42%,
+    rgba(255,255,255,.88) 48%,
+    rgba(0,229,255,.66) 53%,
+    transparent 64% 100%);
+  animation: rush-v2-cut .44s ease-out both !important;
 }
 
 @keyframes rush-v2-cut {
-  0% { opacity: 0; transform: translateY(-50%) rotate(-7deg) translateX(-36%); }
-  20% { opacity: .95; }
-  100% { opacity: 0; transform: translateY(-50%) rotate(-7deg) translateX(36%); }
+  0% { opacity: 0; transform: translate3d(-42%, -50%, 0) rotate(-5deg); }
+  22% { opacity: .9; }
+  100% { opacity: 0; transform: translate3d(42%, -50%, 0) rotate(-5deg); }
 }
 
 .rush-v2-activation {
   position: fixed;
   inset: 0;
-  background: linear-gradient(112deg, transparent 28%, rgba(255,62,165,.18) 41%, rgba(255,255,255,.24) 45%, rgba(0,229,255,.16) 49%, transparent 62%);
-  transform: translateX(-52%);
-  animation: rush-v2-activation .72s ease-out both !important;
+  background: linear-gradient(110deg,
+    transparent 30%,
+    rgba(255,62,165,.14) 42%,
+    rgba(255,255,255,.18) 48%,
+    rgba(0,229,255,.12) 54%,
+    transparent 66%);
+  animation: rush-v2-activation .46s ease-out both !important;
 }
 
 @keyframes rush-v2-activation {
-  0% { opacity: 0; transform: translateX(-52%); }
-  22% { opacity: 1; }
-  100% { opacity: 0; transform: translateX(52%); }
+  0% { opacity: 0; transform: translate3d(-52%,0,0); }
+  25% { opacity: .8; }
+  100% { opacity: 0; transform: translate3d(52%,0,0); }
 }
 
 html[data-theme='rush'] .rush-v2-pop {
-  animation: rush-v2-pop .52s cubic-bezier(.12,.82,.22,1) both !important;
+  animation: rush-v2-pop .3s cubic-bezier(.12,.82,.22,1) both !important;
 }
 
 @keyframes rush-v2-pop {
-  0% { transform: scale(.9) rotate(-1.8deg); }
-  48% { transform: scale(1.065) rotate(.7deg); }
-  100% { transform: scale(1) rotate(0); }
+  0% { transform: scale(.94); }
+  55% { transform: scale(1.035); }
+  100% { transform: scale(1); }
 }
 
-/* Full-screen tab transition. The old tiny nav line is intentionally disabled:
-   navigation now feels like an illustrated panel being thrown across the phone. */
+/* Disable legacy Rush transition surfaces; v2 is the only active motion engine. */
 html[data-theme='rush'] .rush-nav-swipe,
 html[data-theme='rush'] .app-shell.rush-route-shock::after {
   display: none !important;
 }
 
+/* Full-screen tab transition: a single composited element using transform + opacity only. */
 .rush-v2-nav-transition {
   position: fixed;
-  inset: -8vh -22vw;
+  inset: 0;
   z-index: 3;
   pointer-events: none;
-  overflow: hidden;
   opacity: 0;
-  will-change: transform, opacity;
   background:
+    repeating-linear-gradient(0deg,
+      transparent 0 28px,
+      rgba(255,255,255,.08) 29px 30px,
+      transparent 31px 58px),
     linear-gradient(105deg,
-      rgba(5,6,10,.98) 0 12%,
-      rgba(19,10,28,.98) 25%,
-      rgba(255,62,165,.92) 47%,
-      rgba(255,255,255,.96) 50%,
-      rgba(0,229,255,.88) 53%,
-      rgba(7,15,22,.98) 75%,
+      rgba(5,6,10,.98) 0 16%,
+      rgba(72,18,68,.97) 35%,
+      rgba(255,62,165,.9) 46%,
+      rgba(255,255,255,.95) 50%,
+      rgba(0,229,255,.86) 54%,
+      rgba(7,18,26,.98) 71%,
       rgba(5,6,10,.98) 100%);
-  box-shadow: 0 0 70px rgba(255,62,165,.24), 0 0 90px rgba(0,229,255,.18);
-  clip-path: polygon(0 0, 88% 0, 100% 12%, 94% 28%, 100% 46%, 93% 63%, 100% 81%, 90% 100%, 0 100%, 5% 81%, 0 63%, 6% 43%, 0 24%, 7% 8%);
 }
 
 .rush-v2-nav-forward {
-  animation: rush-v2-nav-forward .68s cubic-bezier(.22,.74,.18,1) both !important;
+  animation: rush-v2-nav-forward .46s cubic-bezier(.22,.74,.18,1) both !important;
 }
 
 .rush-v2-nav-backward {
-  animation: rush-v2-nav-backward .68s cubic-bezier(.22,.74,.18,1) both !important;
-}
-
-.rush-v2-nav-ink,
-.rush-v2-nav-lines {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.rush-v2-nav-ink {
-  background:
-    radial-gradient(ellipse at 30% 42%, rgba(255,255,255,.24), transparent 22%),
-    radial-gradient(ellipse at 68% 58%, rgba(0,229,255,.22), transparent 24%),
-    repeating-linear-gradient(104deg, transparent 0 28px, rgba(255,255,255,.09) 30px 31px, transparent 33px 62px);
-  mix-blend-mode: screen;
-  filter: contrast(1.12) saturate(1.18);
-}
-
-.rush-v2-nav-lines {
-  inset: 8% -10%;
-  background:
-    repeating-linear-gradient(0deg,
-      transparent 0 7.5%,
-      rgba(255,255,255,.62) 8%,
-      transparent 8.6% 16%),
-    repeating-linear-gradient(0deg,
-      transparent 0 13%,
-      rgba(0,229,255,.36) 13.5%,
-      transparent 14% 23%);
-  transform: skewX(-18deg) scaleX(1.25);
-  opacity: .64;
-  filter: blur(.3px);
+  animation: rush-v2-nav-backward .46s cubic-bezier(.22,.74,.18,1) both !important;
 }
 
 @keyframes rush-v2-nav-forward {
-  0% { opacity: 0; transform: translate3d(-112%,0,0) skewX(-4deg) scaleX(.93); }
-  12% { opacity: 1; }
-  46% { opacity: 1; transform: translate3d(-3%,0,0) skewX(-1deg) scaleX(1.02); }
-  58% { opacity: 1; transform: translate3d(3%,0,0) skewX(1deg) scaleX(1.02); }
-  100% { opacity: 0; transform: translate3d(112%,0,0) skewX(4deg) scaleX(.94); }
+  0% { opacity: 0; transform: translate3d(-104%,0,0); }
+  18% { opacity: 1; }
+  50% { opacity: 1; transform: translate3d(0,0,0); }
+  68% { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(104%,0,0); }
 }
 
 @keyframes rush-v2-nav-backward {
-  0% { opacity: 0; transform: translate3d(112%,0,0) skewX(4deg) scaleX(.93); }
-  12% { opacity: 1; }
-  46% { opacity: 1; transform: translate3d(3%,0,0) skewX(1deg) scaleX(1.02); }
-  58% { opacity: 1; transform: translate3d(-3%,0,0) skewX(-1deg) scaleX(1.02); }
-  100% { opacity: 0; transform: translate3d(-112%,0,0) skewX(-4deg) scaleX(.94); }
+  0% { opacity: 0; transform: translate3d(104%,0,0); }
+  18% { opacity: 1; }
+  50% { opacity: 1; transform: translate3d(0,0,0); }
+  68% { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(-104%,0,0); }
 }
 
-/* While the wipe crosses the display, the app beneath it shifts a few pixels in
-   the same direction. This gives the transition actual page momentum without
-   moving the fixed bottom controls far enough to feel unstable. */
-html[data-theme='rush'].rush-nav-forwarding .app-shell {
-  animation: rush-v2-shell-forward .58s cubic-bezier(.2,.72,.2,1) both !important;
-}
-
-html[data-theme='rush'].rush-nav-backing .app-shell {
-  animation: rush-v2-shell-backward .58s cubic-bezier(.2,.72,.2,1) both !important;
-}
-
-@keyframes rush-v2-shell-forward {
-  0% { transform: translate3d(0,0,0); filter: none; }
-  42% { transform: translate3d(-10px,0,0); filter: saturate(1.14) brightness(.96); }
-  100% { transform: translate3d(0,0,0); filter: none; }
-}
-
-@keyframes rush-v2-shell-backward {
-  0% { transform: translate3d(0,0,0); filter: none; }
-  42% { transform: translate3d(10px,0,0); filter: saturate(1.14) brightness(.96); }
-  100% { transform: translate3d(0,0,0); filter: none; }
-}
-
-/* The original Rush layer respected iOS Reduce Motion so aggressively that the
-   entire theme could appear static. Rush is explicitly an animation theme, so
-   restore its signature effects here. Other Usly themes still respect the OS setting. */
-@media (prefers-reduced-motion: reduce) {
-  html[data-theme='rush'] #root::before {
-    animation: rush-v2-speedfield 9s linear infinite !important;
+@media (max-width: 760px) {
+  .rush-v2-fx-layer {
+    contain: paint;
   }
-  html[data-theme='rush'] #root::after {
-    animation: rush-v2-neon-breathe 7s ease-in-out infinite alternate !important;
-  }
-  html[data-theme='rush'] .rush-fx-layer,
-  html[data-theme='rush'] .rush-v2-fx-layer {
-    display: block !important;
-  }
-  html[data-theme='rush'] .rush-v2-fx,
-  html[data-theme='rush'] .rush-v2-fx-layer * {
-    animation-duration: revert !important;
-    animation-iteration-count: 1 !important;
+
+  html[data-theme='rush'] .rush-v2-pop {
+    animation-duration: .26s !important;
   }
 }
