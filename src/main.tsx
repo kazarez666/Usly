@@ -9,6 +9,8 @@ import './nocturne-header-fix.css'
 import './theme-cohesion.css'
 import './rush-effects.css'
 import './rush-effects'
+import './rush-motion-v2.css'
+import './rush-motion-v2'
 import './uiHotfix'
 
 createRoot(document.getElementById('root')!).render(<StrictMode><AppBootstrap /></StrictMode>)
