@@ -171,56 +171,12 @@ html[data-theme='rush'] .rush-v2-pop {
   100% { transform: scale(1); }
 }
 
-/* Disable legacy Rush transition surfaces; v2 is the only active motion engine. */
+/* Keep every legacy/full-screen navigation surface disabled. Tab changes should
+   stay instant so the fixed bottom navigation never disappears or gets covered. */
 html[data-theme='rush'] .rush-nav-swipe,
-html[data-theme='rush'] .app-shell.rush-route-shock::after {
+html[data-theme='rush'] .app-shell.rush-route-shock::after,
+html[data-theme='rush'] .rush-v2-nav-transition {
   display: none !important;
-}
-
-/* Full-screen tab transition: a single composited element using transform + opacity only. */
-.rush-v2-nav-transition {
-  position: fixed;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none;
-  opacity: 0;
-  background:
-    repeating-linear-gradient(0deg,
-      transparent 0 28px,
-      rgba(255,255,255,.08) 29px 30px,
-      transparent 31px 58px),
-    linear-gradient(105deg,
-      rgba(5,6,10,.98) 0 16%,
-      rgba(72,18,68,.97) 35%,
-      rgba(255,62,165,.9) 46%,
-      rgba(255,255,255,.95) 50%,
-      rgba(0,229,255,.86) 54%,
-      rgba(7,18,26,.98) 71%,
-      rgba(5,6,10,.98) 100%);
-}
-
-.rush-v2-nav-forward {
-  animation: rush-v2-nav-forward .46s cubic-bezier(.22,.74,.18,1) both !important;
-}
-
-.rush-v2-nav-backward {
-  animation: rush-v2-nav-backward .46s cubic-bezier(.22,.74,.18,1) both !important;
-}
-
-@keyframes rush-v2-nav-forward {
-  0% { opacity: 0; transform: translate3d(-104%,0,0); }
-  18% { opacity: 1; }
-  50% { opacity: 1; transform: translate3d(0,0,0); }
-  68% { opacity: 1; }
-  100% { opacity: 0; transform: translate3d(104%,0,0); }
-}
-
-@keyframes rush-v2-nav-backward {
-  0% { opacity: 0; transform: translate3d(104%,0,0); }
-  18% { opacity: 1; }
-  50% { opacity: 1; transform: translate3d(0,0,0); }
-  68% { opacity: 1; }
-  100% { opacity: 0; transform: translate3d(-104%,0,0); }
 }
 
 @media (max-width: 760px) {
