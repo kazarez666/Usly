@@ -138,7 +138,7 @@ function eventPoint(event: PointerEvent, target: HTMLElement) {
 function onPointerDown(event: PointerEvent) {
   if (!isRushTheme() || reduceMotion.matches) return
 
-  const target = event.target instanceof Element ? event.target.closest<HTMLElement>('button') : null
+  const target = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('button') : null
   if (!target || target.disabled) return
 
   const { x, y } = eventPoint(event, target)
