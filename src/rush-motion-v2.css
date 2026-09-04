@@ -204,6 +204,113 @@ html[data-theme='rush'] .rush-v2-pop {
   100% { transform: scale(1) rotate(0); }
 }
 
+/* Full-screen tab transition. The old tiny nav line is intentionally disabled:
+   navigation now feels like an illustrated panel being thrown across the phone. */
+html[data-theme='rush'] .rush-nav-swipe,
+html[data-theme='rush'] .app-shell.rush-route-shock::after {
+  display: none !important;
+}
+
+.rush-v2-nav-transition {
+  position: fixed;
+  inset: -8vh -22vw;
+  z-index: 3;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0;
+  will-change: transform, opacity;
+  background:
+    linear-gradient(105deg,
+      rgba(5,6,10,.98) 0 12%,
+      rgba(19,10,28,.98) 25%,
+      rgba(255,62,165,.92) 47%,
+      rgba(255,255,255,.96) 50%,
+      rgba(0,229,255,.88) 53%,
+      rgba(7,15,22,.98) 75%,
+      rgba(5,6,10,.98) 100%);
+  box-shadow: 0 0 70px rgba(255,62,165,.24), 0 0 90px rgba(0,229,255,.18);
+  clip-path: polygon(0 0, 88% 0, 100% 12%, 94% 28%, 100% 46%, 93% 63%, 100% 81%, 90% 100%, 0 100%, 5% 81%, 0 63%, 6% 43%, 0 24%, 7% 8%);
+}
+
+.rush-v2-nav-forward {
+  animation: rush-v2-nav-forward .68s cubic-bezier(.22,.74,.18,1) both !important;
+}
+
+.rush-v2-nav-backward {
+  animation: rush-v2-nav-backward .68s cubic-bezier(.22,.74,.18,1) both !important;
+}
+
+.rush-v2-nav-ink,
+.rush-v2-nav-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.rush-v2-nav-ink {
+  background:
+    radial-gradient(ellipse at 30% 42%, rgba(255,255,255,.24), transparent 22%),
+    radial-gradient(ellipse at 68% 58%, rgba(0,229,255,.22), transparent 24%),
+    repeating-linear-gradient(104deg, transparent 0 28px, rgba(255,255,255,.09) 30px 31px, transparent 33px 62px);
+  mix-blend-mode: screen;
+  filter: contrast(1.12) saturate(1.18);
+}
+
+.rush-v2-nav-lines {
+  inset: 8% -10%;
+  background:
+    repeating-linear-gradient(0deg,
+      transparent 0 7.5%,
+      rgba(255,255,255,.62) 8%,
+      transparent 8.6% 16%),
+    repeating-linear-gradient(0deg,
+      transparent 0 13%,
+      rgba(0,229,255,.36) 13.5%,
+      transparent 14% 23%);
+  transform: skewX(-18deg) scaleX(1.25);
+  opacity: .64;
+  filter: blur(.3px);
+}
+
+@keyframes rush-v2-nav-forward {
+  0% { opacity: 0; transform: translate3d(-112%,0,0) skewX(-4deg) scaleX(.93); }
+  12% { opacity: 1; }
+  46% { opacity: 1; transform: translate3d(-3%,0,0) skewX(-1deg) scaleX(1.02); }
+  58% { opacity: 1; transform: translate3d(3%,0,0) skewX(1deg) scaleX(1.02); }
+  100% { opacity: 0; transform: translate3d(112%,0,0) skewX(4deg) scaleX(.94); }
+}
+
+@keyframes rush-v2-nav-backward {
+  0% { opacity: 0; transform: translate3d(112%,0,0) skewX(4deg) scaleX(.93); }
+  12% { opacity: 1; }
+  46% { opacity: 1; transform: translate3d(3%,0,0) skewX(1deg) scaleX(1.02); }
+  58% { opacity: 1; transform: translate3d(-3%,0,0) skewX(-1deg) scaleX(1.02); }
+  100% { opacity: 0; transform: translate3d(-112%,0,0) skewX(-4deg) scaleX(.94); }
+}
+
+/* While the wipe crosses the display, the app beneath it shifts a few pixels in
+   the same direction. This gives the transition actual page momentum without
+   moving the fixed bottom controls far enough to feel unstable. */
+html[data-theme='rush'].rush-nav-forwarding .app-shell {
+  animation: rush-v2-shell-forward .58s cubic-bezier(.2,.72,.2,1) both !important;
+}
+
+html[data-theme='rush'].rush-nav-backing .app-shell {
+  animation: rush-v2-shell-backward .58s cubic-bezier(.2,.72,.2,1) both !important;
+}
+
+@keyframes rush-v2-shell-forward {
+  0% { transform: translate3d(0,0,0); filter: none; }
+  42% { transform: translate3d(-10px,0,0); filter: saturate(1.14) brightness(.96); }
+  100% { transform: translate3d(0,0,0); filter: none; }
+}
+
+@keyframes rush-v2-shell-backward {
+  0% { transform: translate3d(0,0,0); filter: none; }
+  42% { transform: translate3d(10px,0,0); filter: saturate(1.14) brightness(.96); }
+  100% { transform: translate3d(0,0,0); filter: none; }
+}
+
 /* The original Rush layer respected iOS Reduce Motion so aggressively that the
    entire theme could appear static. Rush is explicitly an animation theme, so
    restore its signature effects here. Other Usly themes still respect the OS setting. */
