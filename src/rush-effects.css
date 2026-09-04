@@ -1,0 +1,397 @@
+/* Rush motion layer — hand-drawn neon/smoke interaction language.
+   Scoped completely to the Rush theme. Dynamic particles are created by
+   rush-effects.ts and removed automatically after each interaction. */
+
+html[data-theme='rush'] {
+  --rush-pink: #ff3ea5;
+  --rush-cyan: #00e5ff;
+  --rush-lime: #b7ff3c;
+  --rush-ink: #08090d;
+  --rush-ease: cubic-bezier(.16,.82,.24,1);
+}
+
+/* Screen/page changes should feel like a quick illustrated panel cut. */
+html[data-theme='rush'] :is(
+  .feelings-page,
+  .moments-page,
+  .chat-shell,
+  .us-page,
+  .profile-page,
+  .secret-room-page,
+  .truth-room-page,
+  .shared-wishes-hub,
+  .home-dashboard
+) {
+  animation: rush-page-enter .38s var(--rush-ease) both;
+  transform-origin: 50% 8%;
+}
+
+@keyframes rush-page-enter {
+  0% { opacity: 0; transform: translate3d(10px, 8px, 0) skewX(-.7deg) scale(.992); filter: saturate(1.18) contrast(1.06); }
+  56% { opacity: 1; transform: translate3d(-2px, 0, 0) skewX(.18deg) scale(1.002); }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+
+/* A fast graphic wipe when bottom navigation changes section. */
+html[data-theme='rush'] .app-shell.rush-route-shock::after {
+  content: '' !important;
+  display: block !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 70 !important;
+  pointer-events: none !important;
+  opacity: 0;
+  background:
+    linear-gradient(108deg,
+      transparent 0 34%,
+      rgba(255,62,165,.08) 39%,
+      rgba(255,62,165,.42) 43%,
+      rgba(0,229,255,.34) 46%,
+      transparent 51% 100%) !important;
+  animation: rush-route-cut .34s ease-out both !important;
+  transform: translateX(-38%);
+}
+
+@keyframes rush-route-cut {
+  0% { opacity: 0; transform: translateX(-42%); }
+  18% { opacity: .9; }
+  100% { opacity: 0; transform: translateX(42%); }
+}
+
+/* Buttons behave like tactile illustrated controls rather than flat web UI. */
+html[data-theme='rush'] :is(
+  .primary-button,
+  .secondary-button,
+  .icon-button,
+  .mood-choice,
+  .desire-options button,
+  .shared-wishes-tabs button,
+  .wish-status-tabs button,
+  .randomizer-tabs button,
+  .truth-room-categories button,
+  .truth-status-actions button,
+  .bottom-nav button
+) {
+  position: relative;
+  overflow: hidden;
+  transform-origin: center;
+  transition:
+    transform .16s var(--rush-ease),
+    box-shadow .18s ease,
+    border-color .18s ease,
+    background .18s ease,
+    color .18s ease !important;
+}
+
+html[data-theme='rush'] :is(
+  .primary-button,
+  .secondary-button,
+  .icon-button,
+  .mood-choice,
+  .desire-options button,
+  .shared-wishes-tabs button,
+  .wish-status-tabs button,
+  .randomizer-tabs button,
+  .truth-room-categories button,
+  .truth-status-actions button
+):active {
+  transform: translateY(1px) scale(.965) skewX(-1.4deg) !important;
+}
+
+/* Thin hand-drawn highlight that tears through controls after a press. */
+html[data-theme='rush'] :is(
+  .primary-button,
+  .secondary-button,
+  .mood-choice,
+  .desire-options button,
+  .shared-wishes-tabs button,
+  .wish-status-tabs button
+)::after {
+  content: '';
+  position: absolute;
+  top: -30%;
+  left: -80%;
+  width: 54%;
+  height: 160%;
+  pointer-events: none;
+  opacity: 0;
+  transform: skewX(-24deg);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.42), transparent);
+}
+
+html[data-theme='rush'] :is(
+  .primary-button,
+  .secondary-button,
+  .mood-choice,
+  .desire-options button,
+  .shared-wishes-tabs button,
+  .wish-status-tabs button
+).rush-hit::after {
+  animation: rush-control-slash .48s ease-out both;
+}
+
+@keyframes rush-control-slash {
+  0% { left: -74%; opacity: 0; }
+  20% { opacity: .85; }
+  100% { left: 128%; opacity: 0; }
+}
+
+/* Mood selection gets its own color aura. */
+html[data-theme='rush'] .mood-choice {
+  --rush-mood: var(--rush-pink);
+  isolation: isolate;
+}
+html[data-theme='rush'] .mood-choice.mood-pink { --rush-mood: #ff4fad; }
+html[data-theme='rush'] .mood-choice.mood-yellow { --rush-mood: #ffd84a; }
+html[data-theme='rush'] .mood-choice.mood-blue { --rush-mood: #24e8ff; }
+html[data-theme='rush'] .mood-choice.mood-violet { --rush-mood: #9d75ff; }
+html[data-theme='rush'] .mood-choice.mood-red { --rush-mood: #ff405d; }
+
+html[data-theme='rush'] .mood-choice.selected {
+  border-color: color-mix(in srgb, var(--rush-mood) 72%, white 4%) !important;
+  color: #fff !important;
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--rush-mood) 18%, #090b10),
+      rgba(8,9,13,.94)) !important;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--rush-mood) 24%, transparent) inset,
+    0 0 18px color-mix(in srgb, var(--rush-mood) 20%, transparent),
+    5px 5px 0 rgba(0,0,0,.24) !important;
+  animation: rush-mood-lock .44s var(--rush-ease) both;
+}
+
+html[data-theme='rush'] .mood-choice.selected svg {
+  filter: drop-shadow(0 0 6px var(--rush-mood));
+  animation: rush-icon-kick .42s var(--rush-ease) both;
+}
+
+@keyframes rush-mood-lock {
+  0% { transform: scale(.91) rotate(-1.8deg); }
+  58% { transform: scale(1.045) rotate(.7deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+@keyframes rush-icon-kick {
+  0% { transform: scale(.72) rotate(-13deg); }
+  66% { transform: scale(1.18) rotate(4deg); }
+  100% { transform: scale(1); }
+}
+
+/* Selected pills/tabs snap into place with a neon ink edge. */
+html[data-theme='rush'] :is(
+  .desire-options button.selected,
+  .shared-wishes-tabs button.active,
+  .wish-status-tabs button.active,
+  .randomizer-tabs button.active,
+  .truth-room-categories button.active,
+  .truth-status-actions button.active
+) {
+  box-shadow:
+    3px 3px 0 rgba(0,229,255,.15),
+    -2px -2px 0 rgba(255,62,165,.10),
+    0 0 18px rgba(0,229,255,.07) !important;
+  animation: rush-tab-lock .26s var(--rush-ease) both;
+}
+
+@keyframes rush-tab-lock {
+  0% { transform: translateX(-5px) skewX(-4deg); opacity: .72; }
+  100% { transform: none; opacity: 1; }
+}
+
+/* Cards get a tiny illustrated rise when they arrive, not a permanent costly animation. */
+html[data-theme='rush'] :is(
+  .current-feeling-card,
+  .partner-desire-card,
+  .feelings-composer,
+  .desire-editor,
+  .home-feeling-hero,
+  .home-photo-card,
+  .home-note-card,
+  .chat-panel,
+  .wish-card,
+  .date-item,
+  .achievement-grid article
+) {
+  animation: rush-card-ink .42s var(--rush-ease) both;
+}
+
+@keyframes rush-card-ink {
+  from { opacity: .35; transform: translateY(7px) skewX(-.45deg); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Sending a feeling gets a stronger electric state while the request is in flight. */
+html[data-theme='rush'] .feelings-send:disabled,
+html[data-theme='rush'] .photo-caption-row .primary-button:disabled {
+  opacity: .78 !important;
+  box-shadow:
+    0 0 22px rgba(255,62,165,.18),
+    0 0 32px rgba(0,229,255,.08) !important;
+  animation: rush-sending-pulse .78s ease-in-out infinite alternate;
+}
+
+@keyframes rush-sending-pulse {
+  from { filter: brightness(.92); transform: translateY(0); }
+  to { filter: brightness(1.13); transform: translateY(-1px); }
+}
+
+/* Runtime FX layer ------------------------------------------------------- */
+.rush-fx-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  overflow: hidden;
+  contain: strict;
+}
+
+.rush-fx {
+  --fx: #ff3ea5;
+  position: fixed;
+  left: var(--x);
+  top: var(--y);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.rush-fx-ring {
+  width: 22px;
+  height: 22px;
+  margin: -11px;
+  border: 2px solid var(--fx);
+  border-radius: 46% 54% 51% 49%;
+  box-shadow:
+    0 0 8px var(--fx),
+    0 0 20px color-mix(in srgb, var(--fx) 58%, transparent);
+  animation: rush-ring-out .52s ease-out both;
+}
+
+@keyframes rush-ring-out {
+  0% { opacity: .95; transform: scale(.35) rotate(-7deg); }
+  100% { opacity: 0; transform: scale(4.2) rotate(12deg); }
+}
+
+.rush-fx-flash {
+  width: 84px;
+  height: 84px;
+  margin: -42px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb,var(--fx) 52%,white) 0%, color-mix(in srgb,var(--fx) 17%,transparent) 30%, transparent 69%);
+  mix-blend-mode: screen;
+  animation: rush-flash-out .38s ease-out both;
+}
+
+@keyframes rush-flash-out {
+  0% { opacity: .92; transform: scale(.25); }
+  100% { opacity: 0; transform: scale(1.45); }
+}
+
+.rush-fx-slash {
+  width: var(--len, 24px);
+  height: 3px;
+  margin-left: calc(var(--len, 24px) * -.5);
+  margin-top: -1px;
+  border-radius: 80% 12% 74% 18%;
+  background: linear-gradient(90deg, transparent 0%, var(--fx) 18% 82%, transparent 100%);
+  box-shadow: 0 0 7px var(--fx);
+  transform: rotate(var(--rot, 0deg)) translateX(4px);
+  transform-origin: center;
+  animation: rush-slash-fly .54s var(--rush-ease) both;
+}
+
+@keyframes rush-slash-fly {
+  0% { opacity: 0; transform: rotate(var(--rot)) translateX(0) scaleX(.3); }
+  18% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--rot)) translateX(var(--travel, 58px)) scaleX(1.25); }
+}
+
+.rush-fx-smoke {
+  width: var(--size, 22px);
+  height: calc(var(--size, 22px) * .72);
+  margin-left: calc(var(--size, 22px) * -.5);
+  margin-top: calc(var(--size, 22px) * -.35);
+  border-radius: 56% 44% 62% 38%;
+  background:
+    radial-gradient(ellipse at 35% 44%, color-mix(in srgb,var(--fx) 24%,#dbe9ff) 0%, rgba(80,92,120,.18) 38%, transparent 72%);
+  filter: blur(2.2px);
+  opacity: .56;
+  animation: rush-smoke-drift .82s ease-out both;
+}
+
+@keyframes rush-smoke-drift {
+  0% { opacity: .48; transform: translate(0,0) scale(.55) rotate(var(--rot,0deg)); }
+  100% { opacity: 0; transform: translate(var(--dx,28px),var(--dy,-44px)) scale(1.7) rotate(calc(var(--rot,0deg) + 20deg)); }
+}
+
+.rush-send-streak {
+  position: fixed;
+  left: -25vw;
+  top: var(--y);
+  width: 150vw;
+  height: 58px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-50%) rotate(-6deg) translateX(-34%);
+  background:
+    linear-gradient(90deg,
+      transparent 0 30%,
+      rgba(255,62,165,.04) 35%,
+      rgba(255,62,165,.54) 43%,
+      rgba(255,255,255,.72) 45%,
+      rgba(0,229,255,.48) 47%,
+      transparent 54% 100%);
+  filter: blur(.4px);
+  mix-blend-mode: screen;
+  animation: rush-send-slice .46s ease-out both;
+}
+
+@keyframes rush-send-slice {
+  0% { opacity: 0; transform: translateY(-50%) rotate(-6deg) translateX(-34%); }
+  20% { opacity: .92; }
+  100% { opacity: 0; transform: translateY(-50%) rotate(-6deg) translateX(34%); }
+}
+
+.rush-nav-swipe {
+  position: fixed;
+  left: 7vw;
+  right: 7vw;
+  bottom: calc(42px + env(safe-area-inset-bottom, 0px));
+  height: 2px;
+  pointer-events: none;
+  transform: scaleX(.05) skewX(-28deg);
+  transform-origin: center;
+  background: linear-gradient(90deg, transparent, var(--rush-pink), #fff, var(--rush-cyan), transparent);
+  box-shadow: 0 0 9px rgba(0,229,255,.65), 0 0 15px rgba(255,62,165,.38);
+  animation: rush-nav-line .38s ease-out both;
+}
+
+@keyframes rush-nav-line {
+  0% { opacity: 0; transform: scaleX(.04) skewX(-28deg); }
+  38% { opacity: 1; }
+  100% { opacity: 0; transform: scaleX(1.08) skewX(-28deg); }
+}
+
+/* Keep the effect rich on iPhone without turning the UI into a GPU benchmark. */
+@media (max-width: 760px) {
+  html[data-theme='rush'] :is(.current-feeling-card,.partner-desire-card,.feelings-composer,.desire-editor,.home-feeling-hero,.chat-panel) {
+    animation-duration: .32s;
+  }
+
+  .rush-fx-smoke:nth-of-type(n+4),
+  .rush-fx-slash:nth-of-type(n+8) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme='rush'] *,
+  html[data-theme='rush'] *::before,
+  html[data-theme='rush'] *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+
+  .rush-fx-layer { display: none !important; }
+}
