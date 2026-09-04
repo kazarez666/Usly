@@ -2076,3 +2076,137 @@ html[data-theme="nocturne"] .secret-privacy-shield { background:rgba(7,8,18,.96)
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
 }
+
+/* =========================================================
+   Usly v61 — focused mobile and visual fixes
+   ========================================================= */
+.home-note-actions .secondary-button,
+.home-note-actions .home-note-delete {
+  height:42px!important;
+  min-height:42px!important;
+  margin:0!important;
+}
+.home-note-actions .home-note-delete {
+  width:42px!important;
+  min-width:42px!important;
+  padding:0!important;
+  flex:0 0 42px;
+}
+
+.date-composer {
+  display:grid;
+  grid-template-columns:1fr;
+  gap:8px;
+}
+.date-composer-row {
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:8px!important;
+  margin-top:0!important;
+}
+.date-composer > input,
+.date-composer-row input,
+.date-composer-row .primary-button {
+  width:100%!important;
+  height:42px!important;
+  min-height:42px!important;
+  margin:0!important;
+}
+
+.us-stats-main {
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+}
+.us-load-error {
+  margin:0 0 12px;
+}
+
+.shared-wish-form > input,
+.shared-wish-form > textarea,
+.shared-wish-form > .primary-button {
+  grid-column:1/-1;
+  width:100%!important;
+  justify-self:stretch!important;
+}
+.shared-wish-form > input,
+.shared-wish-form > .primary-button {
+  min-height:44px!important;
+  height:44px!important;
+}
+
+.shared-wishes-hub[data-us-theme] .wishes-list {
+  padding:12px;
+  border:1px solid var(--us-border)!important;
+  border-radius:18px;
+  background:var(--us-panel)!important;
+  box-shadow:0 12px 36px var(--us-shadow)!important;
+}
+.shared-wishes-hub[data-us-theme] .wish-card,
+.shared-wishes-hub[data-us-theme] .wish-empty {
+  color:var(--us-text)!important;
+  border-color:var(--us-border)!important;
+  background:var(--us-panel-2)!important;
+  box-shadow:none!important;
+}
+.shared-wishes-hub[data-us-theme] .wish-card-mark {
+  color:var(--us-accent)!important;
+  background:color-mix(in srgb,var(--us-accent) 11%,transparent)!important;
+}
+.shared-wishes-hub[data-us-theme] .wish-card-top,
+.shared-wishes-hub[data-us-theme] .wish-card-body p,
+.shared-wishes-hub[data-us-theme] .wish-empty p {
+  color:var(--us-muted)!important;
+}
+.shared-wishes-hub[data-us-theme] .wish-card-body h3,
+.shared-wishes-hub[data-us-theme] .wish-empty strong {
+  color:var(--us-text)!important;
+}
+.shared-wishes-hub[data-us-theme="rush"] .wishes-list,
+.shared-wishes-hub[data-us-theme="rush"] .wish-card,
+.shared-wishes-hub[data-us-theme="rush"] .wish-empty {
+  border-radius:8px!important;
+}
+.shared-wishes-hub[data-us-theme="nocturne"] .wishes-list {
+  background:rgba(17,19,38,.78)!important;
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+}
+.shared-wishes-hub[data-us-theme="nocturne"] .wish-card,
+.shared-wishes-hub[data-us-theme="nocturne"] .wish-empty {
+  background:rgba(23,26,49,.82)!important;
+}
+.shared-wishes-hub[data-us-theme="mono"] .wishes-list {
+  border:2px solid #cfd0c8!important;
+  border-radius:10px!important;
+  background:#faf9f4!important;
+  box-shadow:4px 4px 0 #cfd0c8!important;
+}
+.shared-wishes-hub[data-us-theme="mono"] .wish-card,
+.shared-wishes-hub[data-us-theme="mono"] .wish-empty {
+  border:1px solid #cfd0c8!important;
+  border-radius:7px!important;
+  background:#e9e8e1!important;
+}
+.shared-wishes-hub[data-us-theme="custom"] .wishes-list {
+  background:rgba(10,8,16,.48)!important;
+  border-color:rgba(255,255,255,.20)!important;
+  backdrop-filter:blur(18px) saturate(120%);
+  -webkit-backdrop-filter:blur(18px) saturate(120%);
+}
+.shared-wishes-hub[data-us-theme="custom"] .wish-card,
+.shared-wishes-hub[data-us-theme="custom"] .wish-empty {
+  background:rgba(17,13,24,.72)!important;
+  border-color:rgba(255,255,255,.18)!important;
+}
+
+.rooms-entry-grid {
+  margin-bottom:20px!important;
+}
+
+@media(max-width:560px) {
+  .home-note-actions .secondary-button {
+    flex:1 1 auto;
+  }
+  .shared-wishes-hub[data-us-theme] .wishes-list {
+    padding:9px;
+  }
+}

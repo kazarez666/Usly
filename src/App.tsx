@@ -9,7 +9,7 @@ import {
 } from './lib/couples'
 import { getCurrentFeelings, getMyUserId, saveFeeling, type Feeling, type MoodKey } from './lib/feelings'
 import { createMoment, deleteMoment, getMoments, type Moment } from './lib/moments'
-import { deleteMessage, getMessages, getUnreadCount, markMessagesRead, sendMessage, sendVideoMessage, type Message } from './lib/chat'
+import { deleteMessage, getMessageCount, getMessages, getUnreadCount, markMessagesRead, sendMessage, sendVideoMessage, type Message } from './lib/chat'
 import { getDailyHoroscope, zodiacLabel, type DailyHoroscope } from './lib/horoscope'
 import { getUsSpace, leaveCouple, updateMyProfile, updateUsSettings, type UsSpace } from './lib/us'
 import { createWish, completeWish, deleteWish, getWishes, joinWish, type Wish } from './lib/wishes'
@@ -1197,7 +1197,6 @@ function ChatSection({ couple, language, onBack, onUnreadChange }: { couple: Cou
           <input value={text} onChange={event => setText(event.target.value.slice(0, 2000))} placeholder={language === 'ru' ? 'Напиши что-нибудь…' : 'Say something…'} maxLength={2000} autoComplete="off" enterKeyHint="send" />
           <button className="chat-send" disabled={sending || !text.trim()} aria-label={language === 'ru' ? 'Отправить' : 'Send'}><Send size={18} /></button>
         </form>
-        <div className="chat-compose-hint"><span>{text.length}/2000</span><span>{language === 'ru' ? 'Enter — отправить · 🎥 видеокружок' : 'Enter — send · 🎥 video circle'}</span></div>
       </div>
     </section>
   )
@@ -1208,7 +1207,6 @@ function CoupleDatesSection({ couple, language, relationshipStartedAt, onRelatio
   const [dates, setDates] = useState<CoupleDate[]>([])
   const [title, setTitle] = useState('')
   const [date, setDate] = useState('')
-  const [kind, setKind] = useState<'anniversary' | 'birthday' | 'other'>('anniversary')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -1245,9 +1243,9 @@ function CoupleDatesSection({ couple, language, relationshipStartedAt, onRelatio
       return
     }
     setSaving(true); setError('')
-    const result = await createCoupleDate(couple.id, title, date, kind)
+    const result = await createCoupleDate(couple.id, title, date, 'other')
     if (!result.ok) setError(result.error ?? (language === 'ru' ? 'Не удалось сохранить дату.' : 'Could not save the date.'))
-    else { setTitle(''); setDate(''); setKind('anniversary'); await load() }
+    else { setTitle(''); setDate(''); await load() }
     setSaving(false)
   }
 
@@ -1280,11 +1278,6 @@ function CoupleDatesSection({ couple, language, relationshipStartedAt, onRelatio
       <input value={title} onChange={e => setTitle(e.target.value.slice(0, 60))} placeholder={language === 'ru' ? 'Например: Наша годовщина' : 'For example: Our anniversary'} maxLength={60}/>
       <div className="date-composer-row">
         <input type="date" value={date} onChange={e => setDate(e.target.value)} />
-        <select value={kind} onChange={e => setKind(e.target.value as typeof kind)}>
-          <option value="anniversary">{language === 'ru' ? 'Годовщина' : 'Anniversary'}</option>
-          <option value="birthday">{language === 'ru' ? 'День рождения' : 'Birthday'}</option>
-          <option value="other">{language === 'ru' ? 'Другое' : 'Other'}</option>
-        </select>
         <button className="primary-button" disabled={saving} onClick={() => void add()}>{saving ? '…' : <><Plus size={15}/>{language === 'ru' ? 'Добавить' : 'Add'}</>}</button>
       </div>
     </div>
@@ -1330,9 +1323,11 @@ function IntimacyCalendar({ couple, language }: { couple: CoupleSummary; languag
   </section>
 }
 
-function Achievements({ couple, language, daysTogether, photos, wishes }: { couple: CoupleSummary; language: Language; daysTogether: number|null; photos: Moment[]; wishes: Wish[] }) {
+function Achievements({ couple, language, daysTogether, photos, wishes, messageCount }: { couple: CoupleSummary; language: Language; daysTogether: number|null; photos: Moment[]; wishes: Wish[]; messageCount: number }) {
   const [open, setOpen] = useState(() => localStorage.getItem(`${ACHIEVEMENTS_OPEN_KEY_PREFIX}${couple.id}`) === '1')
   useEffect(() => { localStorage.setItem(`${ACHIEVEMENTS_OPEN_KEY_PREFIX}${couple.id}`, open ? '1' : '0') }, [couple.id, open])
+  const completedWishes = wishes.filter(wish => wish.status === 'done').length
+  const daysInUsly = Math.max(0, Math.floor((Date.now() - new Date(couple.createdAt).getTime()) / 86400000))
   const items=[
     {icon:'♡',title:language==='ru'?'Первый день':'First day',text:language==='ru'?'Вы начали своё «мы».':'You started your Us.',ok:daysTogether!==null},
     {icon:'7',title:language==='ru'?'Неделя вместе':'One week',text:language==='ru'?'7 дней рядом.':'7 days together.',ok:(daysTogether??0)>=7},
@@ -1342,17 +1337,32 @@ function Achievements({ couple, language, daysTogether, photos, wishes }: { coup
     {icon:'500',title:language==='ru'?'500 дней':'500 days',text:language==='ru'?'Полтысячи дней вашей истории.':'Five hundred days together.',ok:(daysTogether??0)>=500},
     {icon:'730',title:language==='ru'?'2 года':'Two years',text:language==='ru'?'730 дней рядом.':'730 days together.',ok:(daysTogether??0)>=730},
     {icon:'1000',title:language==='ru'?'1000 дней':'1000 days',text:language==='ru'?'Четырёхзначная история.':'A four-digit love story.',ok:(daysTogether??0)>=1000},
+    {icon:'💬',title:language==='ru'?'Первое сообщение':'First message',text:language==='ru'?'Ваш разговор в Usly начался.':'Your Usly conversation has started.',ok:messageCount>=1},
+    {icon:'10',title:language==='ru'?'10 сообщений':'10 messages',text:language==='ru'?'Первые маленькие разговоры.':'Your first little conversations.',ok:messageCount>=10},
+    {icon:'50',title:language==='ru'?'50 сообщений':'50 messages',text:language==='ru'?'Вы всегда находите, что сказать друг другу.':'You always find something to say.',ok:messageCount>=50},
+    {icon:'100',title:language==='ru'?'100 сообщений':'100 messages',text:language==='ru'?'Уже целая переписка вашей пары.':'A whole conversation history.',ok:messageCount>=100},
+    {icon:'250',title:language==='ru'?'250 сообщений':'250 messages',text:language==='ru'?'Четверть тысячи слов друг другу.':'A quarter-thousand messages together.',ok:messageCount>=250},
+    {icon:'500',title:language==='ru'?'500 сообщений':'500 messages',text:language==='ru'?'Ваш чат действительно живёт.':'Your chat is truly alive.',ok:messageCount>=500},
+    {icon:'1K',title:language==='ru'?'1000 сообщений':'1,000 messages',text:language==='ru'?'Тысяча маленьких касаний через экран.':'A thousand little touches through the screen.',ok:messageCount>=1000},
+    {icon:'▧',title:language==='ru'?'Первый кадр':'First photo',text:language==='ru'?'Первое воспоминание появилось в Usly.':'Your first Usly memory.',ok:photos.length>=1},
     {icon:'▧',title:language==='ru'?'10 кадров':'10 photos',text:language==='ru'?'Вы сохранили 10 воспоминаний.':'You saved 10 memories.',ok:photos.length>=10},
     {icon:'25',title:language==='ru'?'25 кадров':'25 photos',text:language==='ru'?'Целая коллекция ваших моментов.':'A whole collection of moments.',ok:photos.length>=25},
     {icon:'50',title:language==='ru'?'50 кадров':'50 photos',text:language==='ru'?'Пятьдесят общих воспоминаний.':'Fifty shared memories.',ok:photos.length>=50},
+    {icon:'100',title:language==='ru'?'100 кадров':'100 photos',text:language==='ru'?'Целая цифровая полка воспоминаний.':'A full shelf of shared memories.',ok:photos.length>=100},
+    {icon:'✦',title:language==='ru'?'Первое желание':'First wish',text:language==='ru'?'У вас появился первый общий план.':'Your first shared plan.',ok:wishes.length>=1},
+    {icon:'5',title:language==='ru'?'5 желаний':'5 wishes',text:language==='ru'?'Маленький список будущих моментов.':'A small list of future moments.',ok:wishes.length>=5},
     {icon:'✦',title:language==='ru'?'10 желаний':'10 wishes',text:language==='ru'?'Большие и маленькие планы.':'Big and little plans.',ok:wishes.length>=10},
     {icon:'25',title:language==='ru'?'25 желаний':'25 wishes',text:language==='ru'?'Список планов растёт.':'Your shared list keeps growing.',ok:wishes.length>=25},
     {icon:'50',title:language==='ru'?'50 желаний':'50 wishes',text:language==='ru'?'Столько всего хочется попробовать вместе.':'So many things to try together.',ok:wishes.length>=50},
-    {icon:'♡',title:language==='ru'?'100 дней в Usly':'100 days in Usly',text:language==='ru'?'Вы возвращаетесь сюда уже сто дней.':'You have shared this space for 100 days.',ok:Math.max(0,Math.floor((Date.now()-new Date(couple.createdAt).getTime())/86400000))>=100},
-    {icon:'♥',title:language==='ru'?'Год в Usly':'One year in Usly',text:language==='ru'?'Usly стал частью вашей истории.':'Usly has been part of your story for a year.',ok:Math.max(0,Math.floor((Date.now()-new Date(couple.createdAt).getTime())/86400000))>=365},
-    {icon:'✦',title:language==='ru'?'100 фото':'100 photos',text:language==='ru'?'Целая цифровая полка воспоминаний.':'A full shelf of shared memories.',ok:photos.length>=100},
     {icon:'∞',title:language==='ru'?'100 желаний':'100 wishes',text:language==='ru'?'Ваш список мечт уже огромный.':'Your shared wish list is huge.',ok:wishes.length>=100},
-    {icon:'↗',title:language==='ru'?'Первое достижение':'First achievement',text:language==='ru'?'Вы открыли первую награду вашей пары.':'You unlocked your first couple achievement.',ok:true},
+    {icon:'✓',title:language==='ru'?'Первое исполненное':'First wish completed',text:language==='ru'?'Вы вместе превратили желание в воспоминание.':'You turned a wish into a memory.',ok:completedWishes>=1},
+    {icon:'5✓',title:language==='ru'?'5 желаний исполнено':'5 wishes completed',text:language==='ru'?'Ваши планы не остаются только планами.':'Your plans do not stay just plans.',ok:completedWishes>=5},
+    {icon:'10✓',title:language==='ru'?'10 желаний исполнено':'10 wishes completed',text:language==='ru'?'Десять мечт уже стали вашей историей.':'Ten dreams are now part of your story.',ok:completedWishes>=10},
+    {icon:'25✓',title:language==='ru'?'25 желаний исполнено':'25 wishes completed',text:language==='ru'?'Вы умеете воплощать задуманное вместе.':'You make things happen together.',ok:completedWishes>=25},
+    {icon:'7',title:language==='ru'?'Неделя в Usly':'One week in Usly',text:language==='ru'?'Вашему пространству исполнилась неделя.':'Your space is one week old.',ok:daysInUsly>=7},
+    {icon:'30',title:language==='ru'?'Месяц в Usly':'One month in Usly',text:language==='ru'?'Месяц вашей цифровой истории.':'A month of your digital story.',ok:daysInUsly>=30},
+    {icon:'♡',title:language==='ru'?'100 дней в Usly':'100 days in Usly',text:language==='ru'?'Вы возвращаетесь сюда уже сто дней.':'You have shared this space for 100 days.',ok:daysInUsly>=100},
+    {icon:'♥',title:language==='ru'?'Год в Usly':'One year in Usly',text:language==='ru'?'Usly стал частью вашей истории.':'Usly has been part of your story for a year.',ok:daysInUsly>=365},
   ]
   const unlocked = items.filter(i=>i.ok).length
   const next = items.find(i=>!i.ok)
@@ -1621,6 +1631,7 @@ function UsSection({ couple, language, theme, onBack, onOpenSecret, onOpenTruth,
   const [space, setSpace] = useState<UsSpace | null>(null)
   const [photos, setPhotos] = useState<Moment[]>([])
   const [wishes, setWishes] = useState<Wish[]>([])
+  const [messageCount, setMessageCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -1650,10 +1661,11 @@ function UsSection({ couple, language, theme, onBack, onOpenSecret, onOpenTruth,
   }
 
   const load = async () => {
-    const [spaceResult, photoRows, wishRows] = await Promise.all([
+    const [spaceResult, photoRows, wishRows, totalMessages] = await Promise.all([
       getUsSpace(couple.id),
       getMoments(couple.id),
       getWishes(couple.id),
+      getMessageCount(couple.id),
     ])
 
     if (!spaceResult.ok) setError(spaceResult.error ?? 'Не удалось загрузить ваше пространство.')
@@ -1665,6 +1677,7 @@ function UsSection({ couple, language, theme, onBack, onOpenSecret, onOpenTruth,
     }
     setPhotos(photoRows.filter(row => Boolean(row.imageUrl)))
     setWishes(wishRows.ok ? wishRows.wishes : [])
+    setMessageCount(totalMessages)
     setLoading(false)
   }
 
@@ -1681,6 +1694,7 @@ function UsSection({ couple, language, theme, onBack, onOpenSecret, onOpenTruth,
       .channel(`couple-us-${couple.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'moments', filter: `couple_id=eq.${couple.id}` }, () => { void load() })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'couple_wishes', filter: `couple_id=eq.${couple.id}` }, () => { void load() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `couple_id=eq.${couple.id}` }, () => { void getMessageCount(couple.id).then(setMessageCount) })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'couple_dates', filter: `couple_id=eq.${couple.id}` }, () => { void load() })
       .subscribe()
 
@@ -1760,6 +1774,8 @@ function UsSection({ couple, language, theme, onBack, onOpenSecret, onOpenTruth,
         <p>{language === 'ru' ? 'Место, где важны не цифры, а вы двое.' : 'A little place where the important thing is the two of you.'}</p>
       </div>
 
+      {error && <div className="notice us-load-error">{error}</div>}
+
       <div className="us-title-tools">
         {!editing ? (
           <button className="secondary-button us-name-edit-button" onClick={() => setEditing(true)}><Settings size={15}/>{language === 'ru' ? 'Настроить название' : 'Edit name'}</button>
@@ -1790,12 +1806,10 @@ function UsSection({ couple, language, theme, onBack, onOpenSecret, onOpenTruth,
       {blockVisibility.stats && <div className="us-stats us-stats-main">
         <div className="us-stat us-stat-together"><span>{language === 'ru' ? 'Вместе' : 'Together'}</span><strong>{daysTogether === null ? '—' : daysTogether}</strong><small>{language === 'ru' ? 'дней' : 'days'}</small><i>♥</i></div>
         <div className="us-stat us-stat-usly"><span>{language === 'ru' ? 'В Usly' : 'In Usly'}</span><strong>{Math.max(0, Math.floor((Date.now() - new Date(couple.createdAt).getTime()) / 86400000))}</strong><small>{language === 'ru' ? 'дней' : 'days'}</small><i>◌</i></div>
-        <div className="us-stat us-stat-photos"><span>{language === 'ru' ? 'Фото' : 'Photos'}</span><strong>{photos.length}</strong><small>{language === 'ru' ? 'ваших моментов' : 'shared moments'}</small><i>▧</i></div>
-        <div className="us-stat us-stat-wishes"><span>{language === 'ru' ? 'Желания' : 'Wishes'}</span><strong>{wishes.length}</strong><small>{language === 'ru' ? 'для вас двоих' : 'for both of you'}</small><i>✦</i></div>
       </div>}
 
       {blockVisibility.dates && <CoupleDatesSection couple={couple} language={language} relationshipStartedAt={startedAt} onRelationshipDateSave={saveRelationshipDate} relationshipDateSaving={saving} />}
-      {blockVisibility.achievements && <Achievements couple={couple} language={language} daysTogether={daysTogether} photos={photos} wishes={wishes} />}
+      {blockVisibility.achievements && <Achievements couple={couple} language={language} daysTogether={daysTogether} photos={photos} wishes={wishes} messageCount={messageCount} />}
       {blockVisibility.giftWishlist && <GiftWishlist couple={couple} language={language} theme={theme} />}
       {blockVisibility.entertainment && <IdeaRandomizer language={language} />}
       {blockVisibility.compatibility && partner?.zodiac && mine?.zodiac && (
@@ -2824,7 +2838,7 @@ function Home({ t, language, onLanguageChange, theme, onThemeChange, couple, bus
           {!waiting && blockVisibility.home.note && <section className="home-note-card">
             <div className="home-note-head"><div><span className="tiny-label">ЗАПИСКА ДЛЯ ПАРЫ</span><h2>{coupleNotes[0] ? 'Для тебя ❤️' : 'Оставь маленькое сообщение'}</h2></div><Sparkles size={18}/></div>
             {coupleNotes[0] && !noteComposerOpen ? (
-              <div className="home-note-body"><p>{coupleNotes[0].body}</p><small>{formatRelativeTime(coupleNotes[0].createdAt, language)}</small><div className="home-note-actions"><button className="secondary-button" onClick={()=>setNoteComposerOpen(true)}>Изменить записку</button><button className="icon-button" onClick={()=>void deleteCoupleNote(coupleNotes[0].id).then(()=>getCoupleNotes(couple.id)).then(r=>{if(r.ok)setCoupleNotes(r.notes)})} aria-label="Удалить"><Trash2 size={15}/></button></div></div>
+              <div className="home-note-body"><p>{coupleNotes[0].body}</p><small>{formatRelativeTime(coupleNotes[0].createdAt, language)}</small><div className="home-note-actions"><button className="secondary-button" onClick={()=>setNoteComposerOpen(true)}>Изменить записку</button><button className="icon-button home-note-delete" onClick={()=>void deleteCoupleNote(coupleNotes[0].id).then(()=>getCoupleNotes(couple.id)).then(r=>{if(r.ok)setCoupleNotes(r.notes)})} aria-label="Удалить"><Trash2 size={15}/></button></div></div>
             ) : (
               <div className="home-note-composer"><textarea value={noteDraft} onChange={e=>setNoteDraft(e.target.value.slice(0,500))} placeholder="Я тебя люблю, радость моя!" rows={3}/><div><small>{noteDraft.length}/500</small><button className="primary-button" disabled={noteSaving || !noteDraft.trim()} onClick={()=>void saveHomeNote()}>{noteSaving?'Сохраняем…':'Оставить записку'} <Heart size={15}/></button></div></div>
             )}

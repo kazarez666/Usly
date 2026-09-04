@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Usly</title>
+  <desc id="desc">Two people together with a small heart</desc>
+  <defs>
+    <linearGradient id="background" x1="58" y1="40" x2="454" y2="472" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2A162F"/>
+      <stop offset="0.52" stop-color="#B93680"/>
+      <stop offset="1" stop-color="#7C4DDB"/>
+    </linearGradient>
+    <linearGradient id="leftPerson" x1="126" y1="142" x2="270" y2="380" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF8FC"/>
+      <stop offset="1" stop-color="#FFD1E8"/>
+    </linearGradient>
+    <linearGradient id="rightPerson" x1="386" y1="142" x2="242" y2="380" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF9FE"/>
+      <stop offset="1" stop-color="#E4D7FF"/>
+    </linearGradient>
+    <filter id="shadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#130A19" flood-opacity="0.32"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#background)"/>
+  <circle cx="102" cy="82" r="92" fill="#FF86BF" opacity="0.15"/>
+  <circle cx="440" cy="424" r="132" fill="#7E6BFF" opacity="0.18"/>
+  <g filter="url(#shadow)">
+    <circle cx="190" cy="190" r="64" fill="url(#leftPerson)"/>
+    <circle cx="322" cy="190" r="64" fill="url(#rightPerson)"/>
+    <path d="M90 384c7-81 45-129 100-129 52 0 87 38 97 104-13 26-30 47-52 64H125c-23 0-37-16-35-39Z" fill="url(#leftPerson)"/>
+    <path d="M422 384c-7-81-45-129-100-129-52 0-87 38-97 104 13 26 30 47 52 64h110c23 0 37-16 35-39Z" fill="url(#rightPerson)"/>
+  </g>
+  <path d="M256 368c-31-22-66-47-66-84 0-24 18-42 41-42 13 0 24 6 31 16 7-10 18-16 31-16 23 0 41 18 41 42 0 37-35 62-78 84Z" fill="#EE4F9B" stroke="#FFFFFF" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M256 368c-31-22-66-47-66-84 0-24 18-42 41-42 13 0 24 6 31 16 7-10 18-16 31-16 23 0 41 18 41 42 0 37-35 62-78 84Z" fill="#EE4F9B" opacity="0.96"/>
+</svg>

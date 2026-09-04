@@ -106,3 +106,19 @@ export async function getUnreadCount(coupleId: string): Promise<number> {
   }
   return count ?? 0
 }
+
+export async function getMessageCount(coupleId: string): Promise<number> {
+  if (!supabase) return 0
+
+  const { count, error } = await supabase
+    .from('messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('couple_id', coupleId)
+
+  if (error) {
+    console.error('Failed to load message count:', error)
+    return 0
+  }
+
+  return count ?? 0
+}
