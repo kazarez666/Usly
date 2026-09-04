@@ -37,11 +37,17 @@ export async function getCurrentFeelings(coupleId: string): Promise<Feeling[]> {
   }))
 }
 
-export async function getMyUserId(): Promise<string | null> {
+async function getSessionUserId(): Promise<string | null> {
   if (!supabase) return null
-  const { data, error } = await supabase.auth.getUser()
-  if (error || !data.user) return null
-  return data.user.id
+  // getSession() reads the already-restored browser session and avoids an
+  // extra auth network request every time a view needs the current user id.
+  const { data, error } = await supabase.auth.getSession()
+  if (error || !data.session?.user) return null
+  return data.session.user.id
+}
+
+export async function getMyUserId(): Promise<string | null> {
+  return getSessionUserId()
 }
 
 export async function saveFeeling(
@@ -51,10 +57,9 @@ export async function saveFeeling(
 ): Promise<{ ok: boolean; error?: string }> {
   if (!supabase) return { ok: false, error: 'SUPABASE_MISSING' }
 
-  const userResult = await supabase.auth.getUser()
-  if (userResult.error || !userResult.data.user) return { ok: false, error: 'NOT_AUTHENTICATED' }
+  const userId = await getSessionUserId()
+  if (!userId) return { ok: false, error: 'NOT_AUTHENTICATED' }
 
-  const userId = userResult.data.user.id
   const { error } = await supabase
     .from('couple_feelings')
     .upsert({

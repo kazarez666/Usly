@@ -33,15 +33,28 @@ type RpcSpace = RpcPerson & {
   relationship_started_at: string | null
 }
 
+type UsSpaceResult = { ok: boolean; space: UsSpace | null; error?: string }
+type SignedAssetCacheEntry = { url: string | null; expiresAt: number }
+
+const signedAssetCache = new Map<string, SignedAssetCacheEntry>()
+const usSpaceInFlight = new Map<string, Promise<UsSpaceResult>>()
+const SIGNED_ASSET_CACHE_MS = 50 * 60 * 1000
+
 async function signedAsset(bucket: string, path: string | null): Promise<string | null> {
   if (!supabase || !path) return null
   if (path.startsWith('http://') || path.startsWith('https://')) return path
-  const { data } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 60)
-  return data?.signedUrl ?? null
+
+  const key = `${bucket}:${path}`
+  const cached = signedAssetCache.get(key)
+  if (cached && cached.expiresAt > Date.now()) return cached.url
+
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 60)
+  const url = error ? null : data?.signedUrl ?? null
+  if (!error) signedAssetCache.set(key, { url, expiresAt: Date.now() + SIGNED_ASSET_CACHE_MS })
+  return url
 }
 
-
-export async function getUsSpace(coupleId: string): Promise<{ ok: boolean; space: UsSpace | null; error?: string }> {
+async function fetchUsSpace(coupleId: string): Promise<UsSpaceResult> {
   if (!supabase) return { ok: false, space: null, error: 'SUPABASE_MISSING' }
 
   const { data, error } = await supabase.rpc('get_my_us', { target_couple_id: coupleId })
@@ -50,23 +63,44 @@ export async function getUsSpace(coupleId: string): Promise<{ ok: boolean; space
   const rows = (Array.isArray(data) ? data : data ? [data] : []) as RpcSpace[]
   if (!rows.length) return { ok: true, space: null }
 
+  const people = await Promise.all(rows.map(async row => {
+    const [avatarUrl, backgroundUrl] = await Promise.all([
+      signedAsset('avatars', row.avatar_url),
+      signedAsset('profile-backgrounds', row.background_url),
+    ])
+
+    return {
+      userId: row.user_id,
+      displayName: row.display_name || '',
+      avatarUrl,
+      backgroundUrl,
+      gender: row.gender,
+      zodiac: row.zodiac,
+      joinedAt: row.joined_at,
+      isMe: row.is_me,
+    }
+  }))
+
   return {
     ok: true,
     space: {
       coupleName: rows[0].couple_name || 'Наше «мы»',
       relationshipStartedAt: rows[0].relationship_started_at,
-      people: await Promise.all(rows.map(async row => ({
-        userId: row.user_id,
-        displayName: row.display_name || '',
-        avatarUrl: await signedAsset('avatars', row.avatar_url),
-        backgroundUrl: await signedAsset('profile-backgrounds', row.background_url),
-        gender: row.gender,
-        zodiac: row.zodiac,
-        joinedAt: row.joined_at,
-        isMe: row.is_me,
-      }))),
+      people,
     },
   }
+}
+
+export function getUsSpace(coupleId: string): Promise<UsSpaceResult> {
+  const current = usSpaceInFlight.get(coupleId)
+  if (current) return current
+
+  let request: Promise<UsSpaceResult>
+  request = fetchUsSpace(coupleId).finally(() => {
+    if (usSpaceInFlight.get(coupleId) === request) usSpaceInFlight.delete(coupleId)
+  })
+  usSpaceInFlight.set(coupleId, request)
+  return request
 }
 
 export type ProfileGender = 'male' | 'female'
@@ -82,9 +116,10 @@ export async function updateMyProfile(
   const clean = displayName.trim().slice(0, 40)
   if (!clean) return { ok: false, error: 'EMPTY_NAME' }
 
-  const { data: userData, error: userError } = await supabase.auth.getUser()
-  if (userError || !userData.user) return { ok: false, error: 'NOT_AUTHENTICATED' }
-  const userId = userData.user.id
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+  const userId = sessionData.session?.user.id ?? null
+  if (sessionError || !userId) return { ok: false, error: 'NOT_AUTHENTICATED' }
+
   let avatarPath: string | null = null
   let backgroundPath: string | null = null
 
@@ -122,7 +157,6 @@ export async function updateMyProfile(
 
   return { ok: true }
 }
-
 
 export async function updateUsSettings(coupleId: string, coupleName: string, startedAt: string | null): Promise<{ ok: boolean; error?: string }> {
   if (!supabase) return { ok: false, error: 'SUPABASE_MISSING' }

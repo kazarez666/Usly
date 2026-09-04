@@ -18,6 +18,24 @@ type JoinCoupleRpcResult = {
   created_at: string
 }
 
+type MyCoupleResult = {
+  ok: boolean
+  couple: CoupleSummary | null
+  error?: string
+}
+
+const MY_COUPLE_CACHE_MS = 4000
+let recentMyCouple: { at: number; result: MyCoupleResult } | null = null
+
+function rememberMyCouple(result: MyCoupleResult) {
+  if (result.ok) recentMyCouple = { at: Date.now(), result }
+  return result
+}
+
+export function clearMyCoupleReadCache() {
+  recentMyCouple = null
+}
+
 function normalizeCreateResult(
   data: CreateCoupleRpcResult | CreateCoupleRpcResult[] | null,
 ): CreateCoupleRpcResult | null {
@@ -38,38 +56,42 @@ async function getSummary(
 ): Promise<CoupleSummary | null> {
   if (!supabase) return null
 
-  const { data: couple, error: coupleError } = await supabase
-    .from('couples')
-    .select('id, invite_code, created_at')
-    .eq('id', coupleId)
-    .single()
+  // The couple row and member count do not depend on one another. Fetching them
+  // together removes one full network round-trip from app/session restoration.
+  const [coupleResult, membersResult] = await Promise.all([
+    supabase
+      .from('couples')
+      .select('id, invite_code, created_at')
+      .eq('id', coupleId)
+      .single(),
+    supabase
+      .from('couple_members')
+      .select('id', { count: 'exact', head: true })
+      .eq('couple_id', coupleId),
+  ])
 
-  if (coupleError || !couple) return null
-
-  const { count } = await supabase
-    .from('couple_members')
-    .select('id', { count: 'exact', head: true })
-    .eq('couple_id', coupleId)
+  const couple = coupleResult.data
+  if (coupleResult.error || !couple) return null
 
   return {
     id: couple.id,
     inviteCode: inviteCode ?? couple.invite_code,
-    memberCount: count ?? 0,
+    memberCount: membersResult.count ?? 0,
     createdAt: couple.created_at,
   }
 }
 
-export async function getMyCouple(): Promise<{
-  ok: boolean
-  couple: CoupleSummary | null
-  error?: string
-}> {
+export async function getMyCouple(): Promise<MyCoupleResult> {
   if (!supabase) {
     return {
       ok: false,
       couple: null,
       error: 'SUPABASE_MISSING',
     }
+  }
+
+  if (recentMyCouple && Date.now() - recentMyCouple.at < MY_COUPLE_CACHE_MS) {
+    return recentMyCouple.result
   }
 
   const { data: membership, error } = await supabase
@@ -87,25 +109,21 @@ export async function getMyCouple(): Promise<{
   }
 
   if (!membership) {
-    return {
+    return rememberMyCouple({
       ok: true,
       couple: null,
-    }
+    })
   }
 
   const couple = await getSummary(membership.couple_id)
 
-  return {
+  return rememberMyCouple({
     ok: true,
     couple,
-  }
+  })
 }
 
-export async function createCouple(): Promise<{
-  ok: boolean
-  couple: CoupleSummary | null
-  error?: string
-}> {
+export async function createCouple(): Promise<MyCoupleResult> {
   if (!supabase) {
     return {
       ok: false,
@@ -114,6 +132,7 @@ export async function createCouple(): Promise<{
     }
   }
 
+  clearMyCoupleReadCache()
   const { data, error } = await supabase.rpc('create_couple')
 
   if (error) {
@@ -142,16 +161,15 @@ export async function createCouple(): Promise<{
   )
 
   if (couple) {
-    return {
+    return rememberMyCouple({
       ok: true,
       couple,
-    }
+    })
   }
 
-  // create_couple уже успешно выполнилась в базе.
-  // Не показываем ложную ошибку, если мгновенное чтение
-  // созданной пары временно не прошло.
-  return {
+  // create_couple already succeeded in the database. Do not surface a false
+  // failure if the immediate read is briefly delayed.
+  return rememberMyCouple({
     ok: true,
     couple: {
       id: result.couple_id,
@@ -159,14 +177,10 @@ export async function createCouple(): Promise<{
       memberCount: 1,
       createdAt: new Date().toISOString(),
     },
-  }
+  })
 }
 
-export async function joinCouple(inviteCode: string): Promise<{
-  ok: boolean
-  couple: CoupleSummary | null
-  error?: string
-}> {
+export async function joinCouple(inviteCode: string): Promise<MyCoupleResult> {
   if (!supabase) {
     return {
       ok: false,
@@ -185,6 +199,7 @@ export async function joinCouple(inviteCode: string): Promise<{
     }
   }
 
+  clearMyCoupleReadCache()
   const { data, error } = await supabase.rpc('join_couple', {
     p_invite_code: normalizedCode,
   })
@@ -252,16 +267,13 @@ export async function joinCouple(inviteCode: string): Promise<{
   )
 
   if (couple) {
-    return {
+    return rememberMyCouple({
       ok: true,
       couple,
-    }
+    })
   }
 
-  // join_couple уже успешно завершилась в базе.
-  // Это также покрывает сценарий, когда пользователь
-  // был перенесён из своей одиночной пары в пару партнёра.
-  return {
+  return rememberMyCouple({
     ok: true,
     couple: {
       id: result.id,
@@ -269,5 +281,5 @@ export async function joinCouple(inviteCode: string): Promise<{
       memberCount: 2,
       createdAt: result.created_at ?? new Date().toISOString(),
     },
-  }
+  })
 }

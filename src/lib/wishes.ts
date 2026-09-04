@@ -25,6 +25,9 @@ type RpcWish = {
   completed_at: string | null
 }
 
+type WishesResult = { ok: boolean; wishes: Wish[]; error?: string }
+const wishesInFlight = new Map<string, Promise<WishesResult>>()
+
 const mapWish = (row: RpcWish): Wish => ({
   id: row.id,
   coupleId: row.couple_id,
@@ -37,11 +40,23 @@ const mapWish = (row: RpcWish): Wish => ({
   completedAt: row.completed_at,
 })
 
-export async function getWishes(coupleId: string): Promise<{ ok: boolean; wishes: Wish[]; error?: string }> {
+async function fetchWishes(coupleId: string): Promise<WishesResult> {
   if (!supabase) return { ok: false, wishes: [], error: 'SUPABASE_MISSING' }
   const { data, error } = await supabase.rpc('get_my_wishes', { target_couple_id: coupleId })
   if (error) return { ok: false, wishes: [], error: error.message }
   return { ok: true, wishes: (Array.isArray(data) ? data : data ? [data] : []).map(mapWish) }
+}
+
+export function getWishes(coupleId: string): Promise<WishesResult> {
+  const current = wishesInFlight.get(coupleId)
+  if (current) return current
+
+  let request: Promise<WishesResult>
+  request = fetchWishes(coupleId).finally(() => {
+    if (wishesInFlight.get(coupleId) === request) wishesInFlight.delete(coupleId)
+  })
+  wishesInFlight.set(coupleId, request)
+  return request
 }
 
 export async function createWish(coupleId: string, title: string, note: string): Promise<{ ok: boolean; wish: Wish | null; error?: string }> {
@@ -66,7 +81,6 @@ export async function completeWish(wishId: string): Promise<{ ok: boolean; error
   const { error } = await supabase.rpc('complete_wish', { target_wish_id: wishId })
   return error ? { ok: false, error: error.message } : { ok: true }
 }
-
 
 export async function deleteWish(wishId: string): Promise<{ ok: boolean; error?: string }> {
   if (!supabase) return { ok: false, error: 'SUPABASE_MISSING' }

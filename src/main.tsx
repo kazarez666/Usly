@@ -1,7 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import App from './App'
+import AppBootstrap from './AppBootstrap'
 import './styles.css'
 import './app-like.css'
+import './uiHotfix'
 
-createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>)
+createRoot(document.getElementById('root')!).render(<StrictMode><AppBootstrap /></StrictMode>)

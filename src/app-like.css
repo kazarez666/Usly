@@ -217,3 +217,176 @@ select {
     }
   }
 }
+
+/* ===== v60: compact, consistent couple UI ===== */
+
+/* Important dates: keep the date control compact instead of stretching across the card. */
+.date-composer-row {
+  grid-template-columns: minmax(150px, 190px) minmax(120px, 1fr) !important;
+  align-items: center !important;
+}
+.date-composer-row input[type="date"] {
+  inline-size: 190px !important;
+  width: 190px !important;
+  min-width: 150px !important;
+  max-width: 190px !important;
+  justify-self: start !important;
+}
+.date-composer-row .primary-button {
+  width: auto !important;
+  min-width: 120px !important;
+  justify-self: end !important;
+}
+.relationship-date-actions input[type="date"] {
+  width: 178px !important;
+  max-width: 178px !important;
+}
+
+/* Achievements: title, counter and action live on one visual baseline. */
+.achievements-card > .section-heading {
+  align-items: center !important;
+}
+.achievements-card > .section-heading > div:first-child {
+  display: grid !important;
+  align-content: center !important;
+}
+.achievements-card .section-heading h2 {
+  line-height: 1.08 !important;
+  margin-top: 5px !important;
+}
+.achievements-card .achievement-heading-actions {
+  align-self: center !important;
+  display: flex !important;
+  align-items: center !important;
+  min-height: 34px !important;
+}
+.achievements-card .achievement-count,
+.achievements-card .achievement-toggle {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+}
+
+/* Horoscope: the sign is already shown in the top-right badge, so do not repeat it in the body. */
+.us-horoscope-body {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+.us-horoscope-icon {
+  display: none !important;
+}
+.us-horoscope-body .us-horoscope-copy,
+.us-horoscope-body > small {
+  grid-column: 1 !important;
+}
+
+/* Wish list: one visual system for title, state and actions. */
+.shared-wishes-hub .wishes-list {
+  gap: 9px !important;
+}
+.shared-wishes-hub .wish-card {
+  align-items: flex-start !important;
+  gap: 11px !important;
+  padding: 14px !important;
+  border-radius: 18px !important;
+}
+.shared-wishes-hub .wish-card-mark {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 11px !important;
+  font-size: 17px !important;
+}
+.shared-wishes-hub .wish-card-body h3 {
+  margin: 6px 0 0 !important;
+  line-height: 1.28 !important;
+}
+.shared-wishes-hub .wish-card-body p {
+  margin-top: 6px !important;
+  line-height: 1.48 !important;
+}
+.shared-wishes-hub .wish-card-actions {
+  margin-top: 10px !important;
+  gap: 6px !important;
+  min-height: 34px !important;
+}
+.shared-wishes-hub .wish-card-actions .primary-button,
+.shared-wishes-hub .wish-card-actions .secondary-button {
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 11px !important;
+  border-radius: 10px !important;
+  font-size: 10px !important;
+}
+.shared-wishes-hub .wish-card-actions .wish-delete {
+  width: 36px !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  flex: 0 0 36px !important;
+  margin-left: auto !important;
+  border-radius: 10px !important;
+}
+.shared-wishes-hub .wish-waiting,
+.shared-wishes-hub .wish-joined {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 32px !important;
+  padding: 0 10px !important;
+  border: 1px solid color-mix(in srgb, var(--us-accent) 20%, var(--us-border)) !important;
+  border-radius: 999px !important;
+  background: color-mix(in srgb, var(--us-accent) 7%, var(--us-panel-2)) !important;
+  color: var(--us-muted) !important;
+  line-height: 1.2 !important;
+}
+.shared-wishes-hub .wish-joined {
+  color: var(--us-accent) !important;
+}
+
+@media (max-width: 560px) {
+  .date-composer-row {
+    grid-template-columns: 168px minmax(0, 1fr) !important;
+    gap: 8px !important;
+  }
+  .date-composer-row input[type="date"] {
+    inline-size: 168px !important;
+    width: 168px !important;
+    min-width: 0 !important;
+    max-width: 168px !important;
+  }
+  .date-composer-row .primary-button {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .relationship-date-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+  .relationship-date-actions input[type="date"] {
+    width: 100% !important;
+    max-width: 190px !important;
+  }
+  .achievements-card > .section-heading {
+    gap: 8px !important;
+  }
+  .achievements-card .achievement-heading-actions {
+    gap: 5px !important;
+  }
+  .shared-wishes-hub .wish-card {
+    padding: 12px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .date-composer-row {
+    grid-template-columns: 1fr !important;
+  }
+  .date-composer-row input[type="date"],
+  .date-composer-row .primary-button {
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
