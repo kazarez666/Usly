@@ -7,6 +7,8 @@ import './mobile-polish.css'
 import './nocturne-redesign.css'
 import './nocturne-header-fix.css'
 import './theme-cohesion.css'
+import './rush-effects.css'
+import './rush-effects'
 import './uiHotfix'
 
 createRoot(document.getElementById('root')!).render(<StrictMode><AppBootstrap /></StrictMode>)
