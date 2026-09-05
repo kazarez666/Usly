@@ -1,0 +1,109 @@
+/* Chat-first layout: when the Chat tab is open, the conversation owns the
+   entire space between the persistent top bar and bottom navigation. */
+
+/* The dashboard headline and Chat's duplicate intro/header waste vertical
+   space. Keep the global app bar, messages and composer only. */
+.shell.app-shell:has(.chat-page) .dashboard-head,
+.shell.app-shell:has(.chat-page) .chat-page > .section-back,
+.shell.app-shell:has(.chat-page) .chat-intro,
+.shell.app-shell:has(.chat-page) .chat-panel-head {
+  display: none !important;
+}
+
+.shell.app-shell:has(.chat-page) .chat-page {
+  margin: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Do not animate the whole app surface when entering Chat. It creates a small
+   layout jump on iOS and makes the conversation feel slower than it is. */
+.shell.app-shell:has(.chat-page) > *:not(.bottom-nav):not(.toast-notice) {
+  animation: none !important;
+}
+
+@media (max-width: 760px) {
+  html[data-theme] body .shell.app-shell:has(.chat-page) {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 0 calc(56px + var(--us-nav-safe-bottom, 0px)) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  /* Shell loses its horizontal padding in Chat, so the persistent top bar
+     receives its own padding and keeps the same geometry as the rest of Usly. */
+  html[data-theme] body .shell.app-shell:has(.chat-page) .app-nav {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  html[data-theme] body .shell.app-shell:has(.chat-page) .chat-page {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  html[data-theme] body .shell.app-shell:has(.chat-page) .chat-panel {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-bottom: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  html[data-theme] body .shell.app-shell:has(.chat-page) .chat-messages {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 16px 14px 12px !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  html[data-theme] body .shell.app-shell:has(.chat-page) .chat-composer {
+    position: relative !important;
+    inset: auto !important;
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 9px 10px 8px !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  html[data-theme] body .shell.app-shell:has(.chat-page) .chat-error {
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  html[data-theme] body .shell.app-shell:has(.chat-page) .video-recording-bar,
+  html[data-theme] body .shell.app-shell:has(.chat-page) .video-recording-error {
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+}
