@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { sendPartnerPush } from './push'
 
 export type Desire = {
   id: string
@@ -87,6 +88,13 @@ export async function saveMyDesire(coupleId: string, desire: string, intensity: 
     ? [saved, ...cached.rows.filter(item => item.userId !== userId)]
     : [saved]
   desireCache.set(coupleId, { rows, localFastPathUntil: Date.now() + LOCAL_MUTATION_FAST_PATH_MS })
+
+  void sendPartnerPush(coupleId, {
+    type: 'desire',
+    title: 'Новое желание партнёра',
+    body: `${saved.desire} — ${saved.intensity}/10`,
+    entityId: saved.id,
+  })
 
   return { ok: true, desire: saved }
 }
