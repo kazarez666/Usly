@@ -6,20 +6,35 @@ self.addEventListener('push', event => {
     data = { title: 'Usly', body: event.data ? event.data.text() : '' }
   }
 
-  const title = data.title || 'Usly'
-  const options = {
-    body: data.body || '',
-    icon: './icons/usly-192.png',
-    badge: './icons/usly-192.png',
-    tag: data.tag || undefined,
-    data: {
-      url: data.url || self.registration.scope,
-      type: data.type || null,
-      entityId: data.entityId || null,
-    },
-  }
+  event.waitUntil((async () => {
+    // Chat messages are already rendered live inside Usly. If the recipient is
+    // actively looking at the app, do not duplicate that with an iOS banner.
+    // Other event types (feelings, desires, notes) still show normally.
+    if (data.type === 'message') {
+      const windows = await clients.matchAll({ type: 'window', includeUncontrolled: true })
+      const uslyVisible = windows.some(client => {
+        const visibility = 'visibilityState' in client ? client.visibilityState : undefined
+        const focused = 'focused' in client ? client.focused : false
+        return client.url.startsWith(self.registration.scope) && (visibility === 'visible' || focused === true)
+      })
+      if (uslyVisible) return
+    }
 
-  event.waitUntil(self.registration.showNotification(title, options))
+    const title = data.title || 'Usly'
+    const options = {
+      body: data.body || '',
+      icon: './icons/usly-192.png',
+      badge: './icons/usly-192.png',
+      tag: data.tag || undefined,
+      data: {
+        url: data.url || self.registration.scope,
+        type: data.type || null,
+        entityId: data.entityId || null,
+      },
+    }
+
+    await self.registration.showNotification(title, options)
+  })())
 })
 
 self.addEventListener('notificationclick', event => {
