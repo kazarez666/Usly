@@ -81,16 +81,20 @@ export function getMoments(coupleId: string): Promise<Moment[]> {
 
   let request: Promise<Moment[]>
   request = fetchMoments(coupleId).finally(() => {
-    if (momentRequests.get(coupleId) === request) momentRequests.delete(coupleId)
+    if (messageRequests.get(coupleId) === request) messageRequests.delete(coupleId)
   })
   momentRequests.set(coupleId, request)
   return request
 }
 
 export async function getLatestMoment(coupleId: string): Promise<Moment | null> {
-  const cached = momentCache.get(coupleId)
-  if (cached?.rows[0] && cached.localFastPathUntil > Date.now()) return cached.rows[0]
-  if (!supabase) return null
+  if (!supabase) {
+    return momentCache.get(coupleId)?.rows.find(row => Boolean(row.imagePath)) ?? null
+  }
+
+  // Home's "latest photo" is a live widget. Always ask the database for the
+  // newest photo instead of reusing the short local mutation cache: that cache
+  // can contain a newer text-only moment or a stale pre-realtime snapshot.
   const { data, error } = await supabase
     .from('moments')
     .select('id, couple_id, user_id, title, body, image_path, created_at')
@@ -102,10 +106,23 @@ export async function getLatestMoment(coupleId: string): Promise<Moment | null> 
 
   if (error) {
     console.error('Failed to load latest moment:', error)
-    return null
+    return momentCache.get(coupleId)?.rows.find(row => Boolean(row.imagePath)) ?? null
   }
 
-  return data ? mapMomentRow(data) : null
+  if (!data) return null
+  const latest = await mapMomentRow(data)
+
+  // Keep the list cache coherent too, so opening the Photos tab immediately
+  // after Home cannot briefly fall back to an older first row.
+  const cached = momentCache.get(coupleId)
+  if (cached) {
+    const rows = [latest, ...cached.rows.filter(item => item.id !== latest.id)]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 120)
+    momentCache.set(coupleId, { rows, localFastPathUntil: 0 })
+  }
+
+  return latest
 }
 
 export async function getMomentCount(coupleId: string): Promise<number> {
