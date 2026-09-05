@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { sendPartnerPush } from './push'
 
 export type Message = {
   id: string
@@ -129,6 +130,13 @@ export async function sendMessage(coupleId: string, body: string): Promise<{ ok:
     messageCache.set(coupleId, { rows: [message], localFastPathUntil: Date.now() + LOCAL_MUTATION_FAST_PATH_MS })
   }
 
+  void sendPartnerPush(coupleId, {
+    type: 'message',
+    title: 'Новое сообщение',
+    body: text.slice(0, 180),
+    entityId: message.id,
+  })
+
   return { ok: true, message }
 }
 
@@ -140,8 +148,16 @@ export async function sendVideoMessage(coupleId: string, blob: Blob, durationMs:
   const path = `${userId}/${crypto.randomUUID()}.${blob.type.includes('mp4') ? 'mp4' : 'webm'}`
   const { error: uploadError } = await supabase.storage.from('chat-media').upload(path, blob, { contentType: blob.type || 'video/webm', cacheControl: '3600', upsert: false })
   if (uploadError) return { ok: false, error: uploadError.message }
-  const { error } = await supabase.from('messages').insert({ couple_id: coupleId, sender_id: userId, body: '', media_type: 'video', media_path: path, duration_ms: Math.min(Math.round(durationMs), 20000) })
+  const { data, error } = await supabase.from('messages').insert({ couple_id: coupleId, sender_id: userId, body: '', media_type: 'video', media_path: path, duration_ms: Math.min(Math.round(durationMs), 20000) }).select('id').single()
   if (error) { await supabase.storage.from('chat-media').remove([path]); return { ok: false, error: error.message } }
+
+  void sendPartnerPush(coupleId, {
+    type: 'message',
+    title: 'Новое сообщение',
+    body: 'Партнёр отправил видео 🎥',
+    entityId: data?.id ?? null,
+  })
+
   return { ok: true }
 }
 
