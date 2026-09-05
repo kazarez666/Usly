@@ -81,7 +81,7 @@ export function getMoments(coupleId: string): Promise<Moment[]> {
 
   let request: Promise<Moment[]>
   request = fetchMoments(coupleId).finally(() => {
-    if (messageRequests.get(coupleId) === request) messageRequests.delete(coupleId)
+    if (momentRequests.get(coupleId) === request) momentRequests.delete(coupleId)
   })
   momentRequests.set(coupleId, request)
   return request
