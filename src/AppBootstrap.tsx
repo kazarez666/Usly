@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import App from './App'
 import { supabase } from './lib/supabase'
 import { getMyCouple } from './lib/couples'
+import { ensurePushSubscription } from './lib/push'
 
 export default function AppBootstrap() {
   const [checked, setChecked] = useState(false)
@@ -27,7 +28,12 @@ export default function AppBootstrap() {
 
       // Warm the couple summary once. App's own restoration reuses the tiny
       // in-memory cache instead of repeating the same network chain.
-      if (hasSession) await getMyCouple()
+      if (hasSession) {
+        await getMyCouple()
+        // If notifications were already allowed on this device, silently
+        // recreate/save the Web Push subscription after each app start.
+        void ensurePushSubscription()
+      }
       if (!active) return
 
       setChecked(true)

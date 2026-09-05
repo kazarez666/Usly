@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { sendPartnerPush } from './push'
 
 export type MoodKey = 'love' | 'happy' | 'calm' | 'sad' | 'angry' | 'miss'
 
@@ -32,6 +33,18 @@ const mapFeeling = (row: FeelingRow): Feeling => ({
   note: row.note,
   updatedAt: row.updated_at,
 })
+
+function feelingLabel(mood: string): string {
+  switch (mood) {
+    case 'love': return 'Влюблён(а) ❤️'
+    case 'happy': return 'Счастлив(а) 😊'
+    case 'calm': return 'Спокойно 😌'
+    case 'sad': return 'Грустно 😔'
+    case 'angry': return 'Злюсь 😡'
+    case 'miss': return 'Скучаю 🥺'
+    default: return mood
+  }
+}
 
 async function fetchCurrentFeelings(coupleId: string): Promise<Feeling[]> {
   if (!supabase) return []
@@ -108,6 +121,13 @@ export async function saveFeeling(
     ? [feeling, ...cached.rows.filter(item => item.userId !== userId)]
     : [feeling]
   feelingsCache.set(coupleId, { rows, localFastPathUntil: Date.now() + LOCAL_MUTATION_FAST_PATH_MS })
+
+  void sendPartnerPush(coupleId, {
+    type: 'feeling',
+    title: 'Партнёр изменил чувство',
+    body: note.trim() ? `${feelingLabel(mood)} · ${note.trim().slice(0, 120)}` : feelingLabel(mood),
+    entityId: feeling.id,
+  })
 
   return { ok: true, feeling }
 }
