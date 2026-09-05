@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { sendPartnerPush } from './push'
 
 export type CoupleNote = { id:string; coupleId:string; createdBy:string; body:string; createdAt:string }
 
@@ -16,7 +17,9 @@ export async function createCoupleNote(coupleId:string,body:string){
   if(!supabase) return {ok:false,note:null as CoupleNote|null,error:'SUPABASE_MISSING'}
   const {data,error}=await supabase.rpc('create_couple_note',{target_couple_id:coupleId,note_body:body.trim().slice(0,500)})
   if(error) return {ok:false,note:null,error:error.message}
-  return {ok:true,note:data?map(data as Row):null}
+  const note=data?map(data as Row):null
+  if(note) void sendPartnerPush(coupleId,{type:'note',title:'Новая записка для вас двоих',body:note.body,entityId:note.id})
+  return {ok:true,note}
 }
 export async function deleteCoupleNote(id:string){
   if(!supabase) return {ok:false,error:'SUPABASE_MISSING'}
