@@ -1,0 +1,38 @@
+/* Couple hero avatar polish.
+   Portrait avatars often place the face high in the source image. Keep the
+   circular frame intact and bias the crop upward so foreheads/hair are not
+   cut off in the top "Ваше мы" card. */
+
+.us-couple-person .profile-avatar-lg {
+  width: 82px !important;
+  height: 82px !important;
+  min-width: 82px !important;
+  min-height: 82px !important;
+  aspect-ratio: 1 / 1;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  clip-path: circle(50% at 50% 50%);
+  flex: 0 0 82px !important;
+  line-height: 0;
+}
+
+.us-couple-person .profile-avatar-lg img {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  object-fit: cover !important;
+  object-position: 50% 28% !important;
+  border-radius: inherit !important;
+  transform: none !important;
+}
+
+@media (max-width: 560px) {
+  .us-couple-person .profile-avatar-lg {
+    width: 74px !important;
+    height: 74px !important;
+    min-width: 74px !important;
+    min-height: 74px !important;
+    flex-basis: 74px !important;
+  }
+}
